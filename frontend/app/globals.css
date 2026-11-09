@@ -35,7 +35,9 @@ p, h1, h2, h3, figure, ol { margin: 0; }
   border-bottom: 1px solid var(--line);
 }
 
-.project-name { font-size: 16px; font-weight: 750; letter-spacing: -.045em; }
+.brand-link { display: inline-block; flex: 0 0 auto; }
+.brand { display: block; width: clamp(144px, 18vw, 190px); height: auto; }
+.brand--compact { width: clamp(128px, 16vw, 174px); }
 .site-header nav { display: flex; align-items: center; gap: 27px; font-size: 14px; }
 .site-header nav a:hover, .source-link:hover { text-decoration: underline; text-underline-offset: 4px; }
 .source-link { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -215,10 +217,10 @@ p, h1, h2, h3, figure, ol { margin: 0; }
 .workflow-steps li + li { border-left: 1px solid var(--line); }
 .step-number { display: inline-grid; width: 32px; height: 27px; place-items: center; border: 1px solid #c1ce9a; border-radius: 3px; background: #e8efce; font: 600 12px/1 var(--mono); }
 .workflow-steps h3 { margin-block: 21px 8px; font-size: clamp(19px, 2.1vw, 28px); font-weight: 700; letter-spacing: -.055em; }
-.workflow-steps p, .repository-detail p { color: var(--muted); font-size: 15px; line-height: 1.52; }
+.workflow-steps p, .repository-detail { color: var(--muted); font-size: 15px; line-height: 1.52; }
 
 .site-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding-block: 27px 40px; font-size: 14px; }
-.repository-detail { display: grid; gap: 5px; margin-top: 10px; }
+.repository-detail { margin-top: 10px; }
 
 @keyframes title-enter { from { opacity: 0; transform: translateY(105%) rotate(3deg); } to { opacity: 1; transform: none; } }
 @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }

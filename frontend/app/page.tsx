@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import Brand from "./brand";
 
 const repositoryUrl = "https://github.com/sandeshreddy2006/Portfolio-automation";
 
@@ -97,7 +98,7 @@ async function RepositoryDetails() {
     return null;
   }
 
-  let repository: { name: string; description: string };
+  let repository: { description: string };
   try {
     const response = await fetch(new URL("/api/repo", backendUrl), {
       cache: "no-store",
@@ -112,26 +113,23 @@ async function RepositoryDetails() {
     return null;
   }
 
-  return (
-    <div className="repository-detail">
-      <strong>{repository.name}</strong>
-      <p>{repository.description}</p>
-    </div>
-  );
+  return <p className="repository-detail">{repository.description}</p>;
 }
 
 export default function Home() {
   return (
-    <div className="landing">
+    <div id="top" className="landing">
       <header className="site-header page-width">
-        <a className="project-name" href="#top">Portfolio Automation</a>
+        <a className="brand-link" href="#top" aria-label="Portfolabs home">
+          <Brand compact />
+        </a>
         <nav aria-label="Main navigation">
           <a href="#workflow">Workflow</a>
           <RepositoryLink />
         </nav>
       </header>
 
-      <main id="top" className="page-width">
+      <main className="page-width">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="eyebrow intro-label"><span aria-hidden="true" /> A portfolio builder in development</p>
@@ -168,7 +166,7 @@ export default function Home() {
 
       <footer className="site-footer page-width">
         <div>
-          <p className="eyebrow">The project</p>
+          <Brand />
           <Suspense fallback={null}><RepositoryDetails /></Suspense>
         </div>
         <RepositoryLink />
