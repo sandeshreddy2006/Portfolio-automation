@@ -1,0 +1,6 @@
+"$schema" = "https://openapi.vercel.sh/vercel.json"
+
+# Set the Vercel project's Root Directory to frontend.
+framework = "nextjs"
+installCommand = "npm ci"
+buildCommand = "npm run build"
