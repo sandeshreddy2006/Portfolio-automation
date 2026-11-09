@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, StringConstraints
 
 
 Slug = Annotated[
@@ -47,3 +47,40 @@ class PublicPortfolio(BaseModel):
     slug: Slug
     published_content: PortfolioContent
     published_at: datetime
+
+
+Password = Annotated[str, StringConstraints(min_length=15, max_length=128)]
+
+
+class RegisterAccount(BaseModel):
+    name: Title
+    email: EmailStr
+    password: Password
+
+
+class PasswordLogin(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=128)
+
+
+class VerifyAccountCode(BaseModel):
+    code: str = Field(pattern=r"^[0-9]{6}$")
+
+
+class SetAccountPassword(BaseModel):
+    password: Password
+
+
+class AccountDetails(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    email: str
+
+
+class GoogleIdentity(BaseModel):
+    subject: str = Field(min_length=1, max_length=255)
+    email: EmailStr
+    name: str = Field(max_length=120)
+    authoritative_email: bool

@@ -125,9 +125,10 @@ export default function Home() {
           <Brand compact />
         </a>
         <nav aria-label="Main navigation">
-          <a href="#workflow">Workflow</a>
+          <a className="workflow-link" href="#workflow">Workflow</a>
           <Link href="/templates">Templates</Link>
           <RepositoryLink />
+          <Link className="sign-in-link" href="/auth">Sign in</Link>
         </nav>
       </header>
 

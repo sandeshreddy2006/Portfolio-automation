@@ -256,3 +256,31 @@ p, h1, h2, h3, figure, ol { margin: 0; }
   .preview-stage::after { display: none; }
   .primary-link:hover { transform: none; }
 }
+
+.account-page { max-width: 520px; padding-block: 42px 70px; }
+.account-panel { margin-top: 34px; padding: clamp(22px, 5vw, 38px); border: 1px solid var(--line); border-radius: 12px; background: #fffef7; }
+.account-panel h1 { font-size: clamp(30px, 6vw, 43px); font-weight: 750; line-height: 1.04; letter-spacing: -.065em; overflow-wrap: anywhere; }
+.account-description { margin-top: 10px; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+.account-google { display: flex; width: 100%; align-items: center; justify-content: center; gap: 9px; margin-top: 23px; padding: 11px; border: 1px solid var(--line); border-radius: 5px; background: white; font-weight: 700; font-size: 14px; cursor: pointer; }
+.account-google:hover { border-color: var(--muted); }
+.account-form { display: grid; gap: 15px; margin-top: 22px; }
+.account-form label { display: grid; gap: 6px; font-size: 14px; font-weight: 700; }
+.account-form input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 5px; background: white; padding: 10px 12px; color: var(--ink); font: inherit; font-size: 16px; font-weight: 400; }
+.account-form input:focus-visible { outline: 2px solid #3d6124; outline-offset: 1px; }
+.account-form small { color: var(--muted); font-weight: 400; }
+.account-form button { justify-content: center; cursor: pointer; }
+.account-form button:disabled { opacity: .65; cursor: wait; transform: none; }
+.account-error { margin-top: 8px; color: #963326; font-size: 14px; line-height: 1.4; }
+.account-switch { margin-top: 17px; color: var(--muted); font-size: 14px; }
+.account-switch a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.site-header .sign-in-link { border: 1px solid var(--line); border-radius: 5px; padding: 7px 10px; white-space: nowrap; }
+
+@media (max-width: 470px) {
+  .site-header .workflow-link { display: none; }
+  .site-header nav { gap: 9px; }
+  .site-header { gap: 10px; }
+}
+
+@media (max-width: 410px) {
+  .site-header .source-link { display: none; }
+}
