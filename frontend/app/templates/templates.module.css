@@ -1,0 +1,64 @@
+.page {
+  --ink: #19211b;
+  --muted: #505950;
+  --line: #d6d9cb;
+  --lime: #daf977;
+  min-height: 100vh;
+  padding: 0 clamp(18px, 4vw, 56px) 64px;
+  background: #f7f7ee;
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.page a:focus-visible, .page button:focus-visible { outline: 2px solid #3d6124; outline-offset: 4px; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 72px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.topbar a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.topbar span { color: var(--muted); font: 600 12px/1 ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+
+.intro { padding-block: clamp(36px, 6vw, 72px) 36px; }
+.intro h1 { font-size: clamp(40px, 7vw, 88px); font-weight: 760; line-height: .98; letter-spacing: -.06em; }
+.intro p { max-width: 52ch; margin-top: 16px; color: var(--muted); font-size: clamp(16px, 1.6vw, 19px); line-height: 1.55; }
+
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 22px; margin: 0; padding: 0; list-style: none; }
+.card { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; transition: transform 180ms, box-shadow 180ms; }
+.card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px #19211b1f; }
+
+.thumb { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid var(--line); background: #eee; }
+.thumb iframe { position: absolute; top: 0; left: 0; width: 400%; height: 400%; border: 0; transform: scale(.25); transform-origin: 0 0; pointer-events: none; }
+
+.meta { position: relative; padding: 18px 20px 22px; }
+.count { color: var(--muted); font: 600 12px/1 ui-monospace, Consolas, monospace; }
+.meta h2 { margin-top: 10px; font-size: 24px; letter-spacing: -.04em; }
+.meta p { margin-top: 6px; color: var(--muted); font-size: 15px; line-height: 1.45; }
+
+.detail { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 56px; padding-block: 32px; }
+.detail h1 { font-size: clamp(36px, 5.5vw, 68px); font-weight: 760; line-height: 1; letter-spacing: -.06em; }
+.detail > div > p { margin-top: 12px; color: var(--muted); font-size: 18px; line-height: 1.45; }
+.detail dl { display: grid; gap: 14px; margin: 0; }
+.detail dt { color: var(--muted); font: 600 11px/1 ui-monospace, Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; }
+.detail dd { margin: 6px 0 0; line-height: 1.5; }
+.detail code { padding: 2px 6px; border-radius: 4px; background: #e8efce; font-family: ui-monospace, Consolas, monospace; }
+.swatches { display: flex; gap: 8px; }
+.swatches span { width: 28px; height: 28px; border: 1px solid #0003; border-radius: 50%; }
+
+.controls { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.controls > div { display: inline-flex; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.controls button { padding: 9px 16px; border: 0; background: transparent; color: inherit; font: inherit; font-size: 14px; cursor: pointer; }
+.controls button + button { border-left: 1px solid var(--line); }
+.controls button[aria-pressed="true"] { background: var(--lime); font-weight: 700; }
+
+.stage { display: flex; justify-content: center; padding: clamp(10px, 2vw, 24px); border: 1px solid var(--line); border-radius: 10px; background: repeating-linear-gradient(45deg, #ececdf, #ececdf 10px, #f1f1e6 10px, #f1f1e6 20px); }
+.stage iframe { height: 78vh; min-height: 520px; border: 1px solid var(--line); border-radius: 6px; background: #fff; box-shadow: 0 10px 40px #19211b22; transition: width 220ms ease; }
+
+.pager { display: flex; justify-content: space-between; margin-top: 24px; font-weight: 700; }
+.pager a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+@media (max-width: 760px) {
+  .detail { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .stage iframe { transition: none; }
+  .card:hover { transform: none; }
+}

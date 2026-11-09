@@ -1,0 +1,77 @@
+.root {
+  --grass: #5fb04a;
+  --grass-dark: #3f8a33;
+  --dirt: #7a5230;
+  --dirt-dark: #5b3b21;
+  --stone: #c6c6c6;
+  --stone-light: #f2f2f2;
+  --stone-dark: #6d6d6d;
+  --ink: #1d1d1d;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(#5aaee8, #9fd6f7 70%);
+  color: var(--ink);
+  font-family: var(--bk-body), ui-monospace, monospace;
+  font-size: 22px;
+  image-rendering: pixelated;
+}
+
+.root a { color: inherit; }
+.root a:focus-visible { outline: 4px solid #ffd83a; outline-offset: 2px; }
+.root h1, .root h2, .root h3 { font-family: var(--bk-pixel), monospace; font-weight: 400; }
+
+.sky { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.cloud { position: absolute; display: block; width: 40px; height: 40px; background: #fff; opacity: .9; box-shadow: 40px 0 #fff, 80px 0 #fff, 120px 0 #fff, 20px -40px #fff, 60px -40px #fff, 100px -40px #fff; animation: drift 70s linear infinite; }
+/* Clouds stay in the top band, above the title, so they never sit behind white text. */
+.cloud:nth-child(1) { top: 36px; left: -200px; }
+.cloud:nth-child(2) { top: 62px; left: -200px; transform: scale(.6); animation-duration: 95s; animation-delay: -40s; }
+.cloud:nth-child(3) { top: 28px; left: -200px; transform: scale(.45); animation-duration: 120s; animation-delay: -80s; }
+@keyframes drift { to { translate: calc(100vw + 400px) 0; } }
+
+.hero { position: relative; z-index: 1; padding: clamp(40px, 8vw, 96px) clamp(16px, 4vw, 40px) clamp(36px, 6vw, 72px); text-align: center; }
+.welcome { margin: 0; font-size: clamp(20px, 2.6vw, 28px); color: #0b3050; text-shadow: 2px 2px 0 #ffffff80; }
+.hero h1 { margin: 20px 0 0; font-size: clamp(26px, 6.4vw, 68px); line-height: 1.25; color: #fff; text-shadow: 4px 4px 0 #3a3a3a; overflow-wrap: anywhere; }
+.tooltip { display: inline-block; max-width: 40ch; margin: 28px 0 0; padding: 10px 18px; border: 4px solid #2a0a5e; background: #12001e; box-shadow: inset 0 0 0 2px #3b0f7a; color: #fff; font-size: clamp(20px, 2.4vw, 26px); }
+
+.ground { position: relative; z-index: 1; flex: 1; border-top: 28px solid var(--grass); background: repeating-linear-gradient(90deg, #00000010 0 32px, transparent 32px 64px), var(--dirt); box-shadow: inset 0 14px 0 var(--grass-dark); min-height: 50vh; }
+.inner { display: grid; gap: clamp(28px, 4vw, 48px); max-width: 1000px; margin-inline: auto; padding: clamp(28px, 5vw, 56px) clamp(14px, 4vw, 32px) 72px; }
+
+.panel { position: relative; padding: clamp(16px, 2.6vw, 28px); background: var(--stone); color: var(--ink); box-shadow: inset 4px 4px 0 var(--stone-light), inset -4px -4px 0 var(--stone-dark), 0 0 0 4px var(--ink); }
+.panel h2 { margin: 0 0 14px; font-size: 14px; color: #3a3a3a; }
+.panel p { margin: 0; line-height: 1.35; }
+.panel p + p { margin-top: .7em; }
+
+.heading { margin: 0 0 18px; font-size: clamp(14px, 2vw, 18px); color: #fff; text-shadow: 3px 3px 0 #2b1a0b; }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin: 0; padding: 0; list-style: none; }
+.grid li { display: flex; gap: 16px; align-items: flex-start; }
+.grid h3 { margin: 4px 0 10px; font-size: clamp(12px, 1.5vw, 15px); line-height: 1.5; color: #2a0a5e; overflow-wrap: anywhere; }
+.grid a { display: inline-block; margin-top: 10px; padding: 2px 10px; background: var(--grass); color: #fff; text-decoration: none; box-shadow: inset -3px -3px 0 var(--grass-dark), inset 3px 3px 0 #8be06f, 0 0 0 3px var(--ink); text-shadow: 2px 2px 0 #1d4a18; }
+.grid a:hover { background: #6cc656; }
+
+.block { flex: none; width: 52px; height: 52px; box-shadow: inset 4px 4px 0 #ffffff50, inset -4px -4px 0 #00000045, 0 0 0 3px var(--ink); }
+.block0 { background: linear-gradient(var(--grass) 0 32%, #8b5a2b 32%); }
+.block1 { background: linear-gradient(135deg, #8d8d8d 25%, #7a7a7a 25% 50%, #9a9a9a 50% 75%, #707070 75%); }
+.block2 { background: linear-gradient(135deg, #4de6d6 25%, #28b9ad 25% 50%, #7af5e8 50% 75%, #1f9c91 75%); }
+.block3 { background: linear-gradient(135deg, #ffd83a 25%, #e6b81f 25% 50%, #ffe770 50% 75%, #c89a10 75%); }
+.block4 { background: linear-gradient(135deg, #d63a2e 25%, #a82219 25% 50%, #ef5a4d 50% 75%, #861610 75%); }
+.block5 { background: linear-gradient(135deg, #6b4a2b 25%, #805a36 25% 50%, #5a3d22 50% 75%, #7a5230 75%); }
+
+.hotbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 12px; list-style: none; background: #2b2b2b; box-shadow: inset 3px 3px 0 #555, inset -3px -3px 0 #111, 0 0 0 4px var(--ink); }
+.hotbar a, .hotbar span { display: block; min-width: 88px; padding: 12px 18px; background: #8b8b8b; color: #fff; text-align: center; text-decoration: none; text-shadow: 2px 2px 0 #3a3a3a; box-shadow: inset 4px 4px 0 #c6c6c6, inset -4px -4px 0 #555, 0 0 0 3px #111; }
+.hotbar a:hover { background: #a0a0a0; box-shadow: inset 4px 4px 0 #fff, inset -4px -4px 0 #555, 0 0 0 3px #fff; }
+
+@media (max-width: 720px) {
+  .root { font-size: 20px; }
+  .grid { grid-template-columns: 1fr; }
+  .tooltip { max-width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud { animation: none; left: 8%; }
+  .cloud:nth-child(2) { left: 50%; }
+  .cloud:nth-child(3) { left: 78%; }
+}

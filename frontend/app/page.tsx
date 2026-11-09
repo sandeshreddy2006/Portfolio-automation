@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import Brand from "./brand";
@@ -125,6 +126,7 @@ export default function Home() {
         </a>
         <nav aria-label="Main navigation">
           <a href="#workflow">Workflow</a>
+          <Link href="/templates">Templates</Link>
           <RepositoryLink />
         </nav>
       </header>
@@ -141,7 +143,7 @@ export default function Home() {
               We’re building a simpler way to turn your projects, story, and links into a portfolio you can share with anyone.
             </p>
             <div className="hero-actions">
-              <a className="primary-link" href="#workflow">See how it works <Arrow /></a>
+              <Link className="primary-link" href="/templates">Browse templates <Arrow /></Link>
             </div>
           </div>
           <PortfolioPreview />
