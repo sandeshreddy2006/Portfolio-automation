@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 
 
 logger = logging.getLogger(__name__)
+LOGO_URL = "https://www.portfolabs.com/apple-icon.png"
 
 
 def deliver_account_email(
@@ -28,7 +29,14 @@ def deliver_account_email(
     html = f"""
     <div style="background:#f7f7ee;padding:32px;font-family:Arial,sans-serif;color:#19211b">
       <div style="max-width:480px;margin:auto">
-        <strong style="font-size:24px">Portfolabs</strong>
+        <table role="presentation" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding-right:12px">
+              <img src="{LOGO_URL}" width="42" height="42" alt="" style="display:block;border:0;border-radius:9px">
+            </td>
+            <td style="font-size:24px;font-weight:bold">Portfolabs</td>
+          </tr>
+        </table>
         <h1 style="font-size:22px">{subject}</h1>
         <p>{message}</p>
         {code_html}
@@ -81,13 +89,13 @@ def send_verification_code(
         "link": ("Link your Google account to Portfolabs", "link Google to your account"),
         "delete": ("Confirm deletion of your Portfolabs account", "permanently delete your account"),
     }[purpose]
-    deliver_account_email(recipient, subject, f"Use this code to {action}.", code=code)
+    deliver_account_email(recipient, subject, f"Use this Portfolabs code to {action}.", code=code)
 
 
 def send_account_notice(recipient: str, *, deleted: bool = False) -> None:
     if deleted:
         subject = "Your Portfolabs account was deleted"
-        message = "Your account has been deleted. If you’d like to tell us why you left or how we could improve, reply to this email."
+        message = "Your Portfolabs account has been deleted. If you’d like to tell us why you left or how we could improve, reply to this email."
     else:
         subject = "New sign-in to Portfolabs"
         message = "Someone just signed in to your Portfolabs account. If this wasn’t you, reply to this email so we can help."

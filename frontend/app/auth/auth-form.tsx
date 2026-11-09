@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { AccountMenu, useAccount } from "./account-menu";
+import ResendCode from "./resend-code";
 
 type Step = "login" | "register" | "verify" | "link" | "password" | "delete" | "delete-confirm";
 const minimumPasswordLength = 8;
@@ -80,7 +81,7 @@ const steps = {
 
 function googleMessage(error?: string) {
   if (error === "google-config") return "Google sign-in hasn’t been configured yet.";
-  if (error === "email") return "We couldn’t send a verification code. Please wait a minute and try again.";
+  if (error === "email") return "We couldn’t send a verification code. Please wait before trying again.";
   if (error === "unavailable") return "The account service is temporarily unavailable.";
   if (error === "google") return "Google sign-in couldn’t be completed. Please try again.";
   if (error === "link-sign-in") return "Sign in on this site before connecting Google.";
@@ -94,6 +95,7 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(googleMessage(googleError));
   const [strength, setStrength] = useState(0);
+  const [resendCount, setResendCount] = useState(0);
   const { title, description, action, endpoint } = steps[initialStep];
   const entry = initialStep === "login" || initialStep === "register";
   const creatingPassword = initialStep === "register" || initialStep === "password";
@@ -158,7 +160,7 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
 
   return (
     <>
-      {verifyingEmail && <VerificationEnvelope />}
+      {verifyingEmail && <VerificationEnvelope key={resendCount} />}
       <h1>{title}</h1>
       <p className="account-description">{description}</p>
       {deleted && initialStep === "login" && <p className="account-success" role="status">Your Portfolabs account has been deleted.</p>}
@@ -216,7 +218,7 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
         {verifyingEmail && (
           <label>
             Verification code
-            <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required />
+            <input key={resendCount} name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required />
           </label>
         )}
         {message && <p className="account-error" role="alert">{message}</p>}
@@ -224,6 +226,12 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
           {busy ? "Please wait…" : action}
         </button>
       </form>
+      {verifyingEmail && (
+        <ResendCode onResent={() => {
+          setResendCount((count) => count + 1);
+          setMessage("");
+        }} />
+      )}
       {initialStep === "login" ? (
         <p className="account-switch">New to Portfolabs? <Link href="/auth?step=register">Create an account</Link></p>
       ) : (

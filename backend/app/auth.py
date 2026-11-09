@@ -26,6 +26,9 @@ router = APIRouter(prefix="/api/auth", tags=["accounts"])
 logger = logging.getLogger(__name__)
 Database = Annotated[Session, Depends(get_db)]
 CODE_TTL = 600
+RESEND_COOLDOWN = 30
+EMAIL_LIMITS = (("send-cooldown", 1, RESEND_COOLDOWN), ("send-hour", 5, 3600))
+VERIFICATION_PURPOSES = ("register", "google_signup", "google_confirm", "google_link")
 SESSION_TTL = 7 * 24 * 60 * 60
 
 
@@ -81,8 +84,9 @@ def throttle(db: Session, bucket: str, email: str, limit: int, window: int) -> N
     limits = AuthRateLimit.__table__
     insert = sqlite_insert if db.get_bind().dialect.name == "sqlite" else postgres_insert
     expired = limits.c.expires_at <= timestamp
+    key = digest(f"{bucket}:{email}")
     allowed = db.execute(
-        insert(limits).values(key=digest(f"{bucket}:{email}"), attempts=1, expires_at=timestamp + window)
+        insert(limits).values(key=key, attempts=1, expires_at=timestamp + window)
         .on_conflict_do_update(
             index_elements=[limits.c.key],
             set_={
@@ -94,13 +98,36 @@ def throttle(db: Session, bucket: str, email: str, limit: int, window: int) -> N
         .returning(limits.c.attempts)
     ).scalar_one_or_none()
     if allowed is None:
-        raise HTTPException(429, "Too many attempts. Please wait before trying again.")
+        expires_at = db.scalar(select(limits.c.expires_at).where(limits.c.key == key))
+        raise HTTPException(
+            429, "Too many attempts. Please wait before trying again.",
+            headers={"Retry-After": str(max(1, (expires_at or timestamp) - timestamp))},
+        )
 
 
 def throttle_email(db: Session, email: str) -> None:
-    throttle(db, "send-minute", email, 1, 60)
-    throttle(db, "send-hour", email, 5, 3600)
+    for bucket, limit, window in EMAIL_LIMITS:
+        throttle(db, bucket, email, limit, window)
     db.commit()
+
+
+def email_retry_after(db: Session, email: str) -> int:
+    timestamp = now()
+    limits = {digest(f"{bucket}:{email}"): limit for bucket, limit, _ in EMAIL_LIMITS}
+    rows = db.scalars(select(AuthRateLimit).where(AuthRateLimit.key.in_(list(limits))))
+    return max(0, max((row.expires_at - timestamp for row in rows if row.attempts >= limits[row.key]), default=0))
+
+
+def deliver_challenge(email: str, code: str, purpose: str) -> None:
+    email_purpose = {"google_link": "link", "delete": "delete"}.get(purpose, "verify")
+    try:
+        send_verification_code(email, code, purpose=email_purpose)
+    except (OSError, KeyError, ValueError) as error:
+        logger.warning("Portfolabs verification email failed (%s)", type(error).__name__)
+        raise HTTPException(
+            503, "We couldn’t send a verification email. Please try again.",
+            headers={"Retry-After": str(RESEND_COOLDOWN)},
+        ) from error
 
 
 def start_challenge(
@@ -133,13 +160,11 @@ def start_challenge(
 
     if code is not None:
         try:
-            email_purpose = {"google_link": "link", "delete": "delete"}.get(purpose, "verify")
-            send_verification_code(email, code, purpose=email_purpose)
-        except (OSError, KeyError, ValueError) as error:
+            deliver_challenge(email, code, purpose)
+        except HTTPException:
             db.execute(delete(AuthChallenge).where(AuthChallenge.token_hash == token_hash))
             db.commit()
-            logger.warning("Portfolabs verification email failed (%s)", type(error).__name__)
-            raise HTTPException(503, "We couldn’t send a verification email. Try again in a minute.") from error
+            raise
     set_cookie(response, "challenge", token, CODE_TTL)
 
 
@@ -169,7 +194,9 @@ def register(body: RegisterAccount, response: Response, db: Database):
     if db.scalar(select(User.id).where(User.email == email)) is not None:
         # Return the same next step without sending codes for an existing account.
         throttle_email(db, email)
-        set_cookie(response, "challenge", secrets.token_urlsafe(32), CODE_TTL)
+        start_challenge(
+            db, response, email=email, name="", purpose="register_placeholder", require_code=False,
+        )
         return {"step": "verify"}
     start_challenge(
         db, response, email=email, name=body.name, purpose="register",
@@ -205,7 +232,7 @@ def verified_challenge(
 
 @router.post("/verify")
 def verify(body: VerifyAccountCode, request: Request, response: Response, db: Database, background: BackgroundTasks):
-    pending = verified_challenge(db, request, body.code, ("register", "google_signup", "google_confirm", "google_link"))
+    pending = verified_challenge(db, request, body.code, VERIFICATION_PURPOSES)
 
     # Allow pre-update Google challenges that already received their first code to finish.
     if pending.purpose == "google_signup":
@@ -289,6 +316,67 @@ def current_user(request: Request, db: Session) -> User | None:
 @router.get("/session", response_model=AccountDetails | None)
 def session(request: Request, db: Database):
     return current_user(request, db)
+
+
+def pending_verification(request: Request, db: Session) -> AuthChallenge:
+    token = get_cookie(request, "challenge")
+    pending = db.get(AuthChallenge, digest(token)) if token else None
+    if pending is None or pending.expires_at <= now() or (
+        pending.code_hash is None and pending.purpose != "register_placeholder"
+    ):
+        raise HTTPException(400, "This verification has expired. Start again for a new code.")
+    if pending.purpose == "delete":
+        user = current_user(request, db)
+        if user is None or user.id != pending.user_id:
+            raise HTTPException(401, "Sign in to manage your account.")
+    return pending
+
+
+@router.get("/verification")
+def verification_status(request: Request, db: Database):
+    pending = pending_verification(request, db)
+    return {"retry_after": email_retry_after(db, pending.email)}
+
+
+@router.post("/verification/resend")
+def resend_verification(request: Request, response: Response, db: Database):
+    pending = pending_verification(request, db)
+    email, purpose, token_hash, previous_code_hash = (
+        pending.email, pending.purpose, pending.token_hash, pending.code_hash
+    )
+    throttle_email(db, email)
+
+    code, code_hash = None, None
+    if purpose != "register_placeholder":
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        code_hash = code_digest(token_hash, code)
+        while code_hash == previous_code_hash:
+            code = f"{secrets.randbelow(1_000_000):06d}"
+            code_hash = code_digest(token_hash, code)
+
+    refreshed = db.scalar(
+        update(AuthChallenge)
+        .where(
+            AuthChallenge.token_hash == token_hash,
+            AuthChallenge.code_hash == previous_code_hash,
+            AuthChallenge.expires_at > now(),
+        )
+        .values(code_hash=code_hash, attempts_left=5, expires_at=now() + CODE_TTL)
+        .returning(AuthChallenge.token_hash)
+    )
+    if refreshed is None:
+        raise HTTPException(400, "This verification has expired. Start again for a new code.")
+
+    # If delivery fails, roll back the replacement so the original code still works.
+    if code is not None:
+        try:
+            deliver_challenge(email, code, purpose)
+        except HTTPException:
+            db.rollback()
+            raise
+    db.commit()
+    set_cookie(response, "challenge", get_cookie(request, "challenge") or "", CODE_TTL)
+    return {"retry_after": email_retry_after(db, email)}
 
 
 @router.post("/delete/start")

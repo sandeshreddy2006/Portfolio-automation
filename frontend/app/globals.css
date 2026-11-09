@@ -301,6 +301,10 @@ p, h1, h2, h3, figure, ol { margin: 0; }
 .account-form button { justify-content: center; cursor: pointer; }
 .account-form button:disabled { opacity: .65; cursor: wait; transform: none; }
 .account-error { margin-top: 8px; color: #963326; font-size: 14px; line-height: 1.4; }
+.account-resend { display: grid; justify-items: start; gap: 6px; margin-top: 14px; font-size: 14px; color: var(--muted); }
+.account-resend-button { padding: 6px 0; color: var(--ink); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.account-resend-button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+.account-resend-button:focus-visible { outline: 2px solid #3d6124; outline-offset: 3px; }
 .account-success { margin-top: 16px; padding: 11px 13px; border-radius: 6px; background: #e9efdc; }
 .account-text-link { text-decoration: underline; text-underline-offset: 3px; }
 .account-form .account-delete-button { color: #fffef7; background: #963326; border-color: #963326; }

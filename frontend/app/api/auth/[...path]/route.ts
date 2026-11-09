@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { authCookieHeader, authHeaders, backendAuthUrl } from "../backend";
 
-const getRoutes = new Set(["session", "google/start", "google/callback"]);
-const postRoutes = new Set(["register", "login", "verify", "set-password", "logout", "delete/start", "delete/confirm"]);
+const getRoutes = new Set(["session", "google/start", "google/callback", "verification"]);
+const postRoutes = new Set(["register", "login", "verify", "set-password", "logout", "delete/start", "delete/confirm", "verification/resend"]);
 
 async function forward(
   request: NextRequest,
@@ -46,7 +46,7 @@ async function forward(
       redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(25_000),
     });
     const outgoing = new Headers(authHeaders);
-    for (const name of ["content-type", "location"]) {
+    for (const name of ["content-type", "location", "retry-after"]) {
       const value = upstream.headers.get(name);
       if (value) outgoing.set(name, value);
     }
