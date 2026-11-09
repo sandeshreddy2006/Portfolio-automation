@@ -49,7 +49,7 @@ class PublicPortfolio(BaseModel):
     published_at: datetime
 
 
-Password = Annotated[str, StringConstraints(min_length=15, max_length=128)]
+Password = Annotated[str, StringConstraints(min_length=8, max_length=128)]
 
 
 class RegisterAccount(BaseModel):

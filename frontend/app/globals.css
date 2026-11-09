@@ -265,9 +265,39 @@ p, h1, h2, h3, figure, ol { margin: 0; }
 .account-google:hover { border-color: var(--muted); }
 .account-form { display: grid; gap: 15px; margin-top: 22px; }
 .account-form label { display: grid; gap: 6px; font-size: 14px; font-weight: 700; }
+.account-password { display: grid; gap: 6px; }
 .account-form input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 5px; background: white; padding: 10px 12px; color: var(--ink); font: inherit; font-size: 16px; font-weight: 400; }
 .account-form input:focus-visible { outline: 2px solid #3d6124; outline-offset: 1px; }
 .account-form small { color: var(--muted); font-weight: 400; }
+.password-strength {
+  --strength-color: #b95337;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 10px;
+  align-items: baseline;
+  margin-top: 4px;
+}
+.password-strength[data-strength="2"] { --strength-color: #a57725; }
+.password-strength[data-strength="3"] { --strength-color: #567b36; }
+.password-strength-bars { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.password-strength-bars > span { height: 5px; border-radius: 4px; background: #e5e8d8; transition: background-color 220ms ease; }
+.password-strength-bars > [data-filled="true"] { background: var(--strength-color); }
+.account-form .password-strength-status { color: var(--ink); font-weight: 700; }
+
+.verification-envelope { display: block; margin: -4px 0 14px; }
+.verification-letter { animation: verification-letter-rise 740ms cubic-bezier(.17,.8,.28,1) both; }
+.verification-spark { animation: rise 480ms ease-out 340ms both; }
+
+@keyframes verification-letter-rise {
+  from { transform: translateY(25px); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verification-letter, .verification-spark { animation: none; }
+  .password-strength-bars > span { transition: none; }
+}
+
 .account-form button { justify-content: center; cursor: pointer; }
 .account-form button:disabled { opacity: .65; cursor: wait; transform: none; }
 .account-error { margin-top: 8px; color: #963326; font-size: 14px; line-height: 1.4; }

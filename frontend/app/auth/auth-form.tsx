@@ -5,6 +5,33 @@ import { useEffect, useState, type FormEvent } from "react";
 
 type Step = "login" | "register" | "verify" | "link" | "password";
 type Account = { name: string; email: string };
+const minimumPasswordLength = 8;
+
+function passwordStrength(password: string) {
+  const characters = Array.from(password);
+  if (characters.length === 0) return 0;
+  const distinct = new Set(characters).size;
+  const commonPattern = /^(password|qwerty|letmein|admin|123456)[0-9!?.]*$/i;
+  if (characters.length < minimumPasswordLength || distinct < 5 || commonPattern.test(password)) return 1;
+  return characters.length >= 12 && distinct >= 8 ? 3 : 2;
+}
+
+function VerificationEnvelope() {
+  return (
+    <svg className="verification-envelope" aria-hidden="true" viewBox="0 0 128 100" width="112" height="88">
+      <ellipse cx="64" cy="55" rx="48" ry="40" fill="#e9efdc" />
+      <path d="M26 53 64 23l38 30v29H26z" fill="#465e38" />
+      <g className="verification-letter">
+        <rect x="36" y="22" width="56" height="53" rx="5" fill="#fffef7" stroke="#92a579" />
+        <path d="M46 37h20m-20 8h36" stroke="#698056" strokeWidth="2" strokeLinecap="round" />
+        <path d="M47 57h1m6 0h1m6 0h1m6 0h1m6 0h1m6 0h1" stroke="#465e38" strokeWidth="3" strokeLinecap="round" />
+      </g>
+      <path d="m26 53 38 22 38-22v28a6 6 0 0 1-6 6H32a6 6 0 0 1-6-6z" fill="#daf977" stroke="#465e38" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M27 82l27-13m47 13L74 69" fill="none" stroke="#829b48" strokeWidth="1.5" />
+      <path className="verification-spark" d="M104 25v12m-6-6h12M24 30v8m-4-4h8" stroke="#698056" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 const steps = {
   login: {
@@ -51,8 +78,12 @@ export default function AuthForm({ initialStep, googleError }: { initialStep: St
   const [account, setAccount] = useState<Account | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(googleMessage(googleError));
+  const [strength, setStrength] = useState(0);
   const { title, description, action, endpoint } = steps[initialStep];
   const entry = initialStep === "login" || initialStep === "register";
+  const creatingPassword = initialStep === "register" || initialStep === "password";
+  const verifyingEmail = initialStep === "verify" || initialStep === "link";
+  const strengthLabel = ["", "Weak", "Fair", "Strong"][strength];
 
   useEffect(() => {
     if (initialStep !== "login") return;
@@ -104,6 +135,7 @@ export default function AuthForm({ initialStep, googleError }: { initialStep: St
 
   return (
     <>
+      {verifyingEmail && <VerificationEnvelope />}
       <h1>{title}</h1>
       <p className="account-description">{description}</p>
       {entry && (
@@ -127,18 +159,37 @@ export default function AuthForm({ initialStep, googleError }: { initialStep: St
           <label>Email<input name="email" type="email" autoComplete="email" maxLength={254} required /></label>
         )}
         {(entry || initialStep === "password") && (
-          <label>
-            Password
+          <div className="account-password">
+            <label htmlFor="account-password">Password</label>
             <input
+              id="account-password"
               name="password" type="password" maxLength={128}
-              minLength={initialStep === "login" ? undefined : 15}
-              autoComplete={initialStep === "login" ? "current-password" : "new-password"}
+              minLength={creatingPassword ? minimumPasswordLength : undefined}
+              autoComplete={creatingPassword ? "new-password" : "current-password"}
+              aria-describedby={creatingPassword ? "password-guidance" : undefined}
+              onChange={creatingPassword ? (event) => {
+                const input = event.currentTarget;
+                const password = input.value;
+                input.setCustomValidity(password && Array.from(password).length < minimumPasswordLength
+                  ? `Use at least ${minimumPasswordLength} characters.` : "");
+                setStrength(passwordStrength(password));
+              } : undefined}
               required
             />
-            {initialStep !== "login" && <small>Use at least 15 characters.</small>}
-          </label>
+            {creatingPassword && (
+              <span className="password-strength" data-strength={strength}>
+                <span className="password-strength-bars" aria-hidden="true">
+                  {[1, 2, 3].map((bar) => <span key={bar} data-filled={bar <= strength} />)}
+                </span>
+                <small id="password-guidance">Use at least {minimumPasswordLength} characters.</small>
+                <small className="password-strength-status" role="status">
+                  {strengthLabel && `Strength: ${strengthLabel}`}
+                </small>
+              </span>
+            )}
+          </div>
         )}
-        {(initialStep === "verify" || initialStep === "link") && (
+        {verifyingEmail && (
           <label>
             Verification code
             <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required />
