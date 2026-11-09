@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { authCookieHeader, authHeaders, backendAuthUrl } from "../backend";
 
 const getRoutes = new Set(["session", "google/start", "google/callback"]);
-const postRoutes = new Set(["register", "login", "verify", "set-password", "logout"]);
+const postRoutes = new Set(["register", "login", "verify", "set-password", "logout", "delete/start", "delete/confirm"]);
 
 async function forward(
   request: NextRequest,
@@ -40,7 +40,7 @@ async function forward(
   try {
     const upstreamUrl = backendAuthUrl(endpoint);
     if (!upstreamUrl) throw new Error("Missing backend URL");
-    if (endpoint === "google/callback") upstreamUrl.search = request.nextUrl.search;
+    if (endpoint.startsWith("google/")) upstreamUrl.search = request.nextUrl.search;
     const upstream = await fetch(upstreamUrl, {
       method: request.method, headers, body,
       redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(25_000),

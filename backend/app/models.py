@@ -45,6 +45,10 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
+    @property
+    def google_connected(self) -> bool:
+        return self.google_subject is not None
+
 
 class AuthChallenge(Base):
     __tablename__ = "auth_challenges"

@@ -28,10 +28,12 @@ stays on the frontend domain.
 4. On Vercel, keep `BACKEND_URL` set to the Railway API's public HTTPS origin.
 
 Email registration requires a six-digit code. A new Google user sets a
-Portfolabs password before receiving a session. Google users with an email
-address that Google does not control verify it first. Signing in with Google
-on an existing email/password account sends a code before linking the two
-sign-in methods. The existing password continues to work.
+Portfolabs password, then verifies their email by code before receiving a
+session. Existing email/password accounts also require a code to connect
+Google. Users can open their profile, connect Google, or request account
+deletion from the signed-in account menu. Deletion requires its own code and
+revokes sessions on all devices. Portfolabs sends a sign-in notice after
+creating a session and a feedback email after deleting an account.
 
 ## Startup schema migration
 

@@ -5,7 +5,7 @@ from collections.abc import Generator
 from pathlib import Path
 
 from dotenv import load_dotenv
-from sqlalchemy import URL, create_engine, make_url
+from sqlalchemy import URL, create_engine, event, make_url
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 
@@ -27,6 +27,12 @@ if database_url.get_backend_name() == "sqlite":
     connect_args["check_same_thread"] = False
 
 engine = create_engine(database_url, pool_pre_ping=True, connect_args=connect_args)
+
+
+if database_url.get_backend_name() == "sqlite":
+    @event.listens_for(engine, "connect")
+    def enable_sqlite_foreign_keys(connection, _):
+        connection.execute("PRAGMA foreign_keys = ON")
 
 
 class Base(DeclarativeBase):

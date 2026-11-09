@@ -78,12 +78,10 @@ def google_identity(config: GoogleConfig, code: str, verifier: str, nonce: str) 
         ):
             raise ValueError("Invalid Google claims")
         email = claims["email"]
-        domain = email.rsplit("@", 1)[-1].lower() if isinstance(email, str) else ""
         name = claims.get("name")
         return GoogleIdentity(
             subject=claims["sub"], email=email,
             name=name.strip()[:120] if isinstance(name, str) else "",
-            authoritative_email=domain == "gmail.com" or claims.get("hd") == domain,
         )
     except (OSError, KeyError, TypeError, ValueError, GoogleAuthError) as error:
         raise HTTPException(401, "Google sign-in could not be verified.") from error

@@ -12,11 +12,12 @@ export const metadata: Metadata = {
 type Query = Record<string, string | string[] | undefined>;
 
 async function AccountFlow({ searchParams }: { searchParams: Promise<Query> }) {
-  const { step, error } = await searchParams;
-  const initialStep = step === "register" || step === "verify" || step === "link" || step === "password"
+  const { step, error, status } = await searchParams;
+  const initialStep = step === "register" || step === "verify" || step === "link" ||
+    step === "password" || step === "delete" || step === "delete-confirm"
     ? step : "login";
 
-  return <AuthForm key={initialStep} initialStep={initialStep} googleError={typeof error === "string" ? error : undefined} />;
+  return <AuthForm key={initialStep} initialStep={initialStep} googleError={typeof error === "string" ? error : undefined} deleted={status === "deleted"} />;
 }
 
 export default function AccountPage({ searchParams }: { searchParams: Promise<Query> }) {

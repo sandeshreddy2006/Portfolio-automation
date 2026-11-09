@@ -8,7 +8,7 @@ import secrets
 import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy import case, delete, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
@@ -16,7 +16,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.auth_email import send_verification_code
+from app.auth_email import send_account_notice, send_verification_code
 from app.db import get_db
 from app.google_oauth import frontend_origin, google_authorization, google_config, google_identity
 from app.models import AuthChallenge, AuthRateLimit, AuthSession, User
@@ -133,7 +133,8 @@ def start_challenge(
 
     if code is not None:
         try:
-            send_verification_code(email, code, linking=purpose == "google_link")
+            email_purpose = {"google_link": "link", "delete": "delete"}.get(purpose, "verify")
+            send_verification_code(email, code, purpose=email_purpose)
         except (OSError, KeyError, ValueError) as error:
             db.execute(delete(AuthChallenge).where(AuthChallenge.token_hash == token_hash))
             db.commit()
@@ -142,8 +143,11 @@ def start_challenge(
     set_cookie(response, "challenge", token, CODE_TTL)
 
 
-def create_session(db: Session, request: Request, response: Response, user: User) -> None:
+def create_session(
+    db: Session, request: Request, response: Response, user: User, background: BackgroundTasks,
+) -> None:
     token = secrets.token_urlsafe(32)
+    email = user.email
     try:
         db.flush()
         previous = get_cookie(request, "session")
@@ -156,6 +160,7 @@ def create_session(db: Session, request: Request, response: Response, user: User
         raise HTTPException(409, "This account changed during sign-in. Please start again.") from error
     set_cookie(response, "session", token, SESSION_TTL)
     set_cookie(response, "challenge", "", 0)
+    background.add_task(send_account_notice, email)
 
 
 @router.post("/register")
@@ -173,24 +178,36 @@ def register(body: RegisterAccount, response: Response, db: Database):
     return {"step": "verify"}
 
 
-@router.post("/verify")
-def verify(body: VerifyAccountCode, request: Request, response: Response, db: Database):
+def verified_challenge(
+    db: Session, request: Request, code: str, purposes: tuple[str, ...], user_id: int | None = None,
+) -> AuthChallenge:
     token_hash = digest(get_cookie(request, "challenge") or "")
     # Reserve one attempt atomically before reading the challenge. This also
     # serializes successful verification against another request for this code.
-    pending = db.scalars(
+    claim = (
         update(AuthChallenge)
         .where(
             AuthChallenge.token_hash == token_hash, AuthChallenge.expires_at > now(),
             AuthChallenge.attempts_left > 0, AuthChallenge.code_hash.is_not(None),
+            AuthChallenge.purpose.in_(purposes),
         )
-        .values(attempts_left=AuthChallenge.attempts_left - 1)
-        .returning(AuthChallenge)
+    )
+    if user_id is not None:
+        claim = claim.where(AuthChallenge.user_id == user_id)
+    pending = db.scalars(
+        claim.values(attempts_left=AuthChallenge.attempts_left - 1).returning(AuthChallenge)
     ).one_or_none()
-    if pending is None or not hmac.compare_digest(pending.code_hash or "", code_digest(token_hash, body.code)):
+    if pending is None or not hmac.compare_digest(pending.code_hash or "", code_digest(token_hash, code)):
         db.commit()
         raise HTTPException(400, "That code is incorrect, expired, or out of attempts. Start again for a new code.")
+    return pending
 
+
+@router.post("/verify")
+def verify(body: VerifyAccountCode, request: Request, response: Response, db: Database, background: BackgroundTasks):
+    pending = verified_challenge(db, request, body.code, ("register", "google_signup", "google_confirm", "google_link"))
+
+    # Allow pre-update Google challenges that already received their first code to finish.
     if pending.purpose == "google_signup":
         pending.code_hash = None
         pending.expires_at = now() + CODE_TTL
@@ -212,10 +229,17 @@ def verify(body: VerifyAccountCode, request: Request, response: Response, db: Da
         if user is None:
             raise HTTPException(409, "This account already has a Google sign-in. Start again.")
     else:
-        user = User(email=pending.email, name=pending.name, password_hash=pending.password_hash)
+        user = User(
+            email=pending.email, name=pending.name, password_hash=pending.password_hash,
+            google_subject=pending.google_subject,
+        )
         db.add(user)
+        if pending.purpose == "google_confirm":
+            db.execute(delete(AuthChallenge).where(
+                AuthChallenge.email == pending.email, AuthChallenge.purpose == "google_signup",
+            ))
     db.delete(pending)
-    create_session(db, request, response, user)
+    create_session(db, request, response, user, background)
     return {"step": "signed-in"}
 
 
@@ -223,38 +247,36 @@ def verify(body: VerifyAccountCode, request: Request, response: Response, db: Da
 def set_password(body: SetAccountPassword, request: Request, response: Response, db: Database):
     token_hash = digest(get_cookie(request, "challenge") or "")
     pending = db.scalars(
-        delete(AuthChallenge)
+        select(AuthChallenge)
         .where(
             AuthChallenge.token_hash == token_hash, AuthChallenge.expires_at > now(),
             AuthChallenge.purpose == "google_signup", AuthChallenge.code_hash.is_(None),
         )
-        .returning(AuthChallenge)
     ).one_or_none()
     if pending is None:
         raise HTTPException(400, "This Google sign-in has expired. Start again.")
-    user = User(
-        email=pending.email, name=pending.name, google_subject=pending.google_subject,
-        password_hash=password_hash(body.password),
+    if db.scalar(select(User.id).where(User.email == pending.email)) is not None:
+        raise HTTPException(409, "This email already has an account. Start again to sign in.")
+    start_challenge(
+        db, response, email=pending.email, name=pending.name, purpose="google_confirm",
+        password=body.password, subject=pending.google_subject,
     )
-    db.add(user)
-    create_session(db, request, response, user)
-    return {"step": "signed-in"}
+    return {"step": "verify"}
 
 
 @router.post("/login")
-def login(body: PasswordLogin, request: Request, response: Response, db: Database):
+def login(body: PasswordLogin, request: Request, response: Response, db: Database, background: BackgroundTasks):
     email = body.email.lower()
     throttle(db, "password", email, 10, 900)
     db.commit()
     user = db.scalar(select(User).where(User.email == email))
     if not password_matches(body.password, user.password_hash if user else None) or user is None:
         raise HTTPException(401, "Email or password is incorrect.")
-    create_session(db, request, response, user)
+    create_session(db, request, response, user, background)
     return {"step": "signed-in"}
 
 
-@router.get("/session", response_model=AccountDetails | None)
-def session(request: Request, db: Database):
+def current_user(request: Request, db: Session) -> User | None:
     token = get_cookie(request, "session")
     if not token:
         return None
@@ -262,6 +284,45 @@ def session(request: Request, db: Database):
         select(User).join(AuthSession, AuthSession.user_id == User.id)
         .where(AuthSession.token_hash == digest(token), AuthSession.expires_at > now())
     )
+
+
+@router.get("/session", response_model=AccountDetails | None)
+def session(request: Request, db: Database):
+    return current_user(request, db)
+
+
+@router.post("/delete/start")
+def start_account_deletion(request: Request, response: Response, db: Database):
+    user = current_user(request, db)
+    if user is None:
+        raise HTTPException(401, "Sign in to delete your account.")
+    start_challenge(
+        db, response, email=user.email, name=user.name, purpose="delete", user_id=user.id,
+    )
+    return {"step": "delete-confirm"}
+
+
+@router.post("/delete/confirm")
+def confirm_account_deletion(
+    body: VerifyAccountCode, request: Request, response: Response, db: Database, background: BackgroundTasks,
+):
+    user = current_user(request, db)
+    if user is None:
+        raise HTTPException(401, "Sign in to delete your account.")
+    verified_challenge(db, request, body.code, ("delete",), user.id)
+    email = user.email
+    db.execute(delete(AuthChallenge).where(or_(AuthChallenge.email == email, AuthChallenge.user_id == user.id)))
+    db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))
+    db.delete(user)
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(409, "Your account changed during deletion. Please try again.") from error
+    for name in ("session", "challenge", "oauth"):
+        set_cookie(response, name, "", 0)
+    background.add_task(send_account_notice, email, deleted=True)
+    return {"step": "deleted"}
 
 
 @router.post("/logout")
@@ -275,15 +336,20 @@ def logout(request: Request, response: Response, db: Database):
     return {"step": "login"}
 
 
-def complete_google(body: GoogleIdentity, request: Request, response: Response, db: Session) -> str:
+def complete_google(
+    body: GoogleIdentity, request: Request, response: Response, db: Session,
+    background: BackgroundTasks, link_user: User | None,
+) -> str:
     subject = body.subject
+    email = body.email.lower()
     user = db.scalar(select(User).where(User.google_subject == subject))
+    if link_user is not None and (link_user.email != email or (user is not None and user.id != link_user.id)):
+        return "link-mismatch"
     if user is not None:
-        create_session(db, request, response, user)
+        create_session(db, request, response, user, background)
         return "signed-in"
 
-    email = body.email.lower()
-    existing = db.scalar(select(User).where(User.email == email))
+    existing = link_user or db.scalar(select(User).where(User.email == email))
     if existing is not None:
         if existing.google_subject is not None:
             raise HTTPException(409, "This account already has a Google sign-in.")
@@ -296,38 +362,60 @@ def complete_google(body: GoogleIdentity, request: Request, response: Response, 
     name = body.name.strip() or email.split("@")[0][:120]
     start_challenge(
         db, response, email=email, name=name, purpose="google_signup",
-        subject=subject, require_code=not body.authoritative_email,
+        subject=subject, require_code=False,
     )
-    return "password" if body.authoritative_email else "verify"
+    return "password"
 
 
 @router.get("/google/start")
-def google_start(request: Request):
+def google_start(request: Request, db: Database, intent: str = ""):
     try:
         config = google_config()
     except HTTPException:
         return RedirectResponse("/auth?error=google-config", status_code=303)
     if request.headers.get("X-Portfolabs-Origin") != config.origin:
-        return RedirectResponse(f"{config.origin}/api/auth/google/start", status_code=303)
+        query = "?intent=link" if intent == "link" else ""
+        return RedirectResponse(f"{config.origin}/api/auth/google/start{query}", status_code=303)
 
+    session_token = get_cookie(request, "session")
+    if intent == "link":
+        user = current_user(request, db)
+        if user is None or not session_token:
+            return RedirectResponse("/auth?error=link-sign-in", status_code=303)
+        if user.google_connected:
+            return RedirectResponse("/auth", status_code=303)
     url, state_cookie = google_authorization(config)
+    if intent == "link" and session_token:
+        state_cookie += f".{digest(session_token)}"
     response = RedirectResponse(url, status_code=303)
     set_cookie(response, "oauth", state_cookie, CODE_TTL)
     return response
 
 
 @router.get("/google/callback")
-def google_callback(request: Request, db: Database, code: str = "", state: str = ""):
+def google_callback(request: Request, db: Database, background: BackgroundTasks, code: str = "", state: str = ""):
     response = RedirectResponse("/auth?error=google", status_code=303)
     set_cookie(response, "oauth", "", 0)
     cookie = (get_cookie(request, "oauth") or "").split(".")
-    if len(cookie) != 3 or not code or not state.isascii() or not hmac.compare_digest(cookie[0], state):
+    if len(cookie) not in (3, 4) or not code or not state.isascii() or not hmac.compare_digest(cookie[0], state):
         return response
+
+    link_user = None
+    if len(cookie) == 4:
+        token = get_cookie(request, "session")
+        if token and hmac.compare_digest(cookie[3].encode(), digest(token).encode()):
+            link_user = current_user(request, db)
+        if link_user is None:
+            response.headers["location"] = "/auth?error=link-sign-in"
+            return response
 
     try:
         identity = google_identity(google_config(), code, cookie[1], cookie[2])
-        step = complete_google(identity, request, response, db)
-        response.headers["location"] = "/auth" if step == "signed-in" else f"/auth?step={step}"
+        step = complete_google(identity, request, response, db, background, link_user)
+        if step == "link-mismatch":
+            response.headers["location"] = "/auth?error=link-mismatch"
+        else:
+            response.headers["location"] = "/auth" if step == "signed-in" else f"/auth?step={step}"
     except (HTTPException, IntegrityError) as error:
         db.rollback()
         if isinstance(error, HTTPException) and error.status_code in (429, 503):

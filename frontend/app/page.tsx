@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import Brand from "./brand";
+import AccountNavigation from "./auth/account-menu";
 
 const repositoryUrl = "https://github.com/sandeshreddy2006/Portfolio-automation";
 
@@ -128,7 +129,7 @@ export default function Home() {
           <a className="workflow-link" href="#workflow">Workflow</a>
           <Link href="/templates">Templates</Link>
           <RepositoryLink />
-          <Link className="sign-in-link" href="/auth">Sign in</Link>
+          <AccountNavigation />
         </nav>
       </header>
 

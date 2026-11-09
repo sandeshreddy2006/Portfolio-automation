@@ -77,10 +77,10 @@ class AccountDetails(BaseModel):
     id: int
     name: str
     email: str
+    google_connected: bool
 
 
 class GoogleIdentity(BaseModel):
     subject: str = Field(min_length=1, max_length=255)
     email: EmailStr
     name: str = Field(max_length=120)
-    authoritative_email: bool
