@@ -16,10 +16,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Portfolio Automation", lifespan=lifespan)
 
-default_frontend_url = "" if os.getenv("RAILWAY_ENVIRONMENT_ID") else "http://localhost:3000"
+frontend_url = os.getenv("FRONTEND_URL") or "http://localhost:3000"
 frontend_origins = [
     origin.strip().rstrip("/")
-    for origin in os.getenv("FRONTEND_URL", default_frontend_url).split(",")
+    for origin in frontend_url.split(",")
     if origin.strip()
 ]
 app.add_middleware(

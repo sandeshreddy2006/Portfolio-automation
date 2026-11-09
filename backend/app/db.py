@@ -22,9 +22,6 @@ database_url = (
 if database_url.drivername in {"postgres", "postgresql"}:
     database_url = database_url.set(drivername="postgresql+psycopg")
 
-if os.getenv("RAILWAY_ENVIRONMENT_ID") and database_url.get_backend_name() != "postgresql":
-    raise RuntimeError("Set DATABASE_URL to the Railway PostgreSQL connection URL.")
-
 connect_args = {}
 if database_url.get_backend_name() == "sqlite":
     connect_args["check_same_thread"] = False
