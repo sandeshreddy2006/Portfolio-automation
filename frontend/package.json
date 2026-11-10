@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "e2e:core": "node e2e/core.mjs",
+    "e2e:sessions": "node e2e/sessions.mjs",
+    "e2e:accounts": "node e2e/accounts.mjs",
+    "e2e:features": "node e2e/features.mjs"
   },
   "dependencies": {
     "next": "16.4.5",
@@ -20,6 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "playwright-core": "^1.65.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

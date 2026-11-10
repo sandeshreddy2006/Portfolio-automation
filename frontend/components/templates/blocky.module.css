@@ -75,3 +75,6 @@
   .cloud:nth-child(2) { left: 50%; }
   .cloud:nth-child(3) { left: 78%; }
 }
+
+.avatar { display: block; width: 104px; height: 104px; margin: 0 auto 20px; object-fit: cover; box-shadow: inset 4px 4px 0 #ffffff50, 0 0 0 4px var(--ink); }
+.thumb { flex: none; width: 96px; height: 96px; object-fit: cover; box-shadow: 0 0 0 3px var(--ink); }

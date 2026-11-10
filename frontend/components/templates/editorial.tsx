@@ -1,12 +1,13 @@
 import { Fraunces, Inter } from "next/font/google";
 import { displayHost, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
+import { UserImage } from "./user-image";
 import styles from "./editorial.module.css";
 
 const serif = Fraunces({ subsets: ["latin"], style: ["normal", "italic"], variable: "--ed-serif" });
 const sans = Inter({ subsets: ["latin"], variable: "--ed-sans" });
 
 export function Editorial({ content }: { content: PortfolioContent }) {
-  const { name, headline, bio, projects, links } = content;
+  const { name, avatar, headline, bio, projects, links } = content;
   const about = paragraphs(bio);
 
   return (
@@ -18,6 +19,7 @@ export function Editorial({ content }: { content: PortfolioContent }) {
 
       <main>
         <section className={styles.hero}>
+          <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
           <h1>{name}</h1>
           {headline && <p className={styles.lede}>{headline}</p>}
         </section>
@@ -43,6 +45,7 @@ export function Editorial({ content }: { content: PortfolioContent }) {
                   <li key={index}>
                     <span className={styles.number}>{String(index + 1).padStart(2, "0")}</span>
                     <div>
+                      <UserImage src={project.image} alt="" className={styles.cover} />
                       <h3>{project.title}</h3>
                       {project.description && <p>{project.description}</p>}
                       {href && (

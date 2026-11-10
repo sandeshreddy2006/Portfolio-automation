@@ -1,11 +1,12 @@
 import { Space_Grotesk } from "next/font/google";
 import { displayHost, initials, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
+import { UserImage } from "./user-image";
 import styles from "./bento.module.css";
 
 const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--bn-sans" });
 
 export function Bento({ content }: { content: PortfolioContent }) {
-  const { name, headline, bio, projects, links } = content;
+  const { name, avatar, headline, bio, projects, links } = content;
   const about = paragraphs(bio);
 
   return (
@@ -17,8 +18,12 @@ export function Bento({ content }: { content: PortfolioContent }) {
           {headline && <p className={styles.headline}>{headline}</p>}
         </header>
 
-        <div className={`${styles.card} ${styles.avatar}`} aria-hidden="true">
-          <span>{initials(name)}</span>
+        <div className={`${styles.card} ${styles.avatar}`} aria-hidden={avatar ? undefined : "true"}>
+          {avatar ? (
+            <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.photo} priority />
+          ) : (
+            <span>{initials(name)}</span>
+          )}
         </div>
 
         {about.length > 0 && (
@@ -34,6 +39,7 @@ export function Bento({ content }: { content: PortfolioContent }) {
           const href = safeHref(project.url);
           return (
             <article key={index} className={`${styles.card} ${styles.project} ${styles[`tone${index % 5}`]}`}>
+              <UserImage src={project.image} alt="" className={styles.cover} />
               <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
               <h2>{project.title}</h2>
               {project.description && <p>{project.description}</p>}

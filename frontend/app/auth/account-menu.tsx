@@ -32,6 +32,7 @@ export function AccountMenu({ googleConnected }: { googleConnected: boolean }) {
         </svg>
       </summary>
       <div className="account-menu-items">
+        <Link href="/dashboard">My portfolios</Link>
         <Link href="/auth">View profile</Link>
         {googleConnected ? (
           <span className="account-menu-connected">Google connected</span>

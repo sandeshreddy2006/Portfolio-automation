@@ -1,50 +1,102 @@
-# Portfolio-automation
+# Portfolabs
 
-## Portfolabs account setup
+Pick a design, add your details, and publish a portfolio at a link you can share.
 
-Run `./backend/run_sqlite.sh` from the repo root and `npm run dev` from
-`frontend`. Open `http://localhost:3000/auth` for local sign-in. Next.js
-forwards Google OAuth and account requests to FastAPI. The browser session
-stays on the frontend domain.
+- **Frontend:** Next.js (`frontend/`), deployed on Vercel.
+- **Backend:** FastAPI (`backend/`), deployed on Railway with PostgreSQL.
+- **Images:** Cloudflare R2. **Email:** Resend or SMTP. **Writing help:** Google Gemini (free tier).
 
-1. Create a **Web application** OAuth client in Google Cloud and configure the
-   Google Auth Platform consent screen for Portfolabs. Add
-   `http://localhost:3000/api/auth/google/callback` to the local client's
-   authorized redirect URIs and
-   `https://www.portfolabs.com/api/auth/google/callback` to the production
-   client's authorized redirect URIs. FastAPI builds the callback from the
-   first origin in `FRONTEND_URL`.
-2. For local testing, fill in `frontend/.env.local` and `backend/.env` using
-   the matching examples. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-   on FastAPI. Generate an `AUTH_CODE_SECRET` with `openssl rand -hex 32`.
-   On Railway, keep
-   `FRONTEND_URL=https://www.portfolabs.com` and
-   `DATABASE_URL=${{Postgres.DATABASE_URL}}`.
-3. On Railway Pro, set `SMTP_USERNAME` to your Gmail address and
-   `SMTP_PASSWORD` to a Google app password. Portfolabs defaults to
-   `smtp.gmail.com` on port 587 with STARTTLS and sends as
-   `Portfolabs <your Gmail address>`. Leave `RESEND_API_KEY` unset to use
-   SMTP. For Resend instead, set its API key and an authorized `MAIL_FROM`.
-4. On Vercel, keep `BACKEND_URL` set to the Railway API's public HTTPS origin.
+## Run it locally
 
-Email registration requires a six-digit code. A new Google user sets a
-Portfolabs password, then verifies their email by code before receiving a
-session. Existing email/password accounts also require a code to connect
-Google. Users can open their profile, connect Google, or request account
-deletion from the signed-in account menu. Deletion requires its own code and
-revokes sessions on all devices. Portfolabs sends a sign-in notice after
-creating a session and a feedback email after deleting an account.
+```bash
+# 1. Backend (Windows paths shown; use .venv/bin/python on macOS/Linux)
+cd backend
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
+copy .env.example .env          # then set AUTH_CODE_SECRET to 32+ random characters
+.venv\Scripts\python.exe seed_dev.py
+.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
 
-## Startup schema migration
+# 2. Frontend (new terminal)
+cd frontend
+npm install
+npm run dev
+```
 
-FastAPI startup runs the same schema reconciliation as
-`cd backend && python -m app.migrate`. It creates missing modeled tables and
-permanently deletes unmodeled tables and columns in the application's default
-database schema. Use a dedicated Portfolabs database and back it up before
-deploying a model removal. Column renames and additions to existing tables
-require a separate migration. On SQLite, removing a constrained column may
-rebuild its table with the modeled indexes and constraints.
+Open http://localhost:3000. `seed_dev.py` creates a **local-only** test account
+(`tester@portfolabs.dev` / `Portfolabs-Test-2026!`) and a demo portfolio at `/p/demo-alex`.
+It refuses to run against PostgreSQL. With no email service configured, verification
+codes are printed in the backend terminal.
 
-The migration runs transactionally under a database lock. On Railway,
-successful runs are recorded by deployment ID so other replicas and restarts
-of that deployment skip the work. Locally, reconciliation runs on startup.
+## Tests
+
+```bash
+cd backend && .venv\Scripts\python.exe -m pytest tests -q
+cd frontend && npm run lint && npm run build
+```
+
+The suite runs on SQLite by default. The live site uses PostgreSQL, so before a release also run it
+against an empty PostgreSQL database (`TEST_DATABASE_URL=postgresql://user:pass@localhost:5432/db`).
+That turns on extra checks for simultaneous requests and for upgrading an older database.
+
+There are also browser tests that click through the real screens (sign-up, publishing, images,
+two tabs, renaming, the AI helper). See `frontend/e2e/README.md`.
+
+## How the live site is connected
+
+GitHub holds the code only. Passwords, API keys and hosting logins are never stored in it.
+The live site is wired together inside each service's own dashboard:
+
+- **Vercel** builds the `frontend/` folder from this GitHub repo every time `main` is pushed.
+- **Railway** builds the `backend/` folder from the same repo and runs the database.
+- Each service has its own **Variables** screen where the settings below are typed in.
+
+Whoever created those projects owns the logins. To work on the deployment, ask them to invite you
+(Vercel: project → Settings → Members; Railway: project → Settings → Members) or to share the
+variable names they used. Share secret values privately, never in GitHub, chats or screenshots.
+
+**Railway service settings:** Root Directory `backend`. Start command:
+
+```
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+## Going live checklist
+
+**Railway (backend)**
+
+| Setting | Notes |
+|---|---|
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `FRONTEND_URL` | `https://www.portfolabs.com` |
+| `AUTH_CODE_SECRET` | 32+ random characters |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | redirect URI `https://www.portfolabs.com/api/auth/google/callback` |
+| `RESEND_API_KEY`, `MAIL_FROM` | or the `SMTP_*` settings |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL` | image uploads; without them uploads are disabled |
+| `GEMINI_API_KEY` | optional; free key from https://aistudio.google.com/apikey. Without it the "Improve with AI" buttons are hidden |
+| `REPORT_EMAIL`, `REVALIDATE_SECRET` | optional; report emails and the takedown tool |
+
+**Vercel (frontend, Root Directory = `frontend`)**: `BACKEND_URL` (the Railway URL),
+optionally `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `REVALIDATE_SECRET`.
+
+**Cloudflare R2**: create a bucket, connect a custom domain such as `assets.portfolabs.com`,
+and create an API token with Object Read & Write on that bucket.
+
+**Subdomains (optional)**: point wildcard DNS (`*.portfolabs.com`) at Vercel, add the wildcard
+domain in Vercel, then set `ROOT_DOMAIN` and `NEXT_PUBLIC_ROOT_DOMAIN` to `portfolabs.com`.
+
+## Moderation
+
+Reports are stored in the database. From the backend's environment:
+
+```bash
+python moderate.py reports                # list recent reports
+python moderate.py unpublish some-address # take a portfolio offline immediately
+```
+
+## Notes
+
+- A deleted portfolio address is held for 30 days so nobody can take over old links.
+- The template list lives in two places that must match: `frontend/components/templates/meta.ts`
+  and `TEMPLATE_IDS` in `backend/app/portfolios.py`. A test fails if they drift apart.
+- Schema changes only ever add tables and columns (`backend/app/migrate.py` never drops anything).

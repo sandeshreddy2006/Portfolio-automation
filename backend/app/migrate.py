@@ -1,12 +1,14 @@
-"""Reconcile the dedicated application database with the SQLAlchemy models."""
+"""Bring the database up to date with the SQLAlchemy models without ever dropping data.
+
+This only creates missing tables, columns and indexes. Removing or reshaping a
+column is a deliberate change and needs a hand-written migration, so nothing
+here deletes data when a deployment's models differ from the database.
+"""
 
 import logging
 import os
-from uuid import uuid4
 
-from sqlalchemy import Connection, Engine, MetaData, inspect, select
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.schema import CreateIndex, CreateTable
+from sqlalchemy import Connection, Engine, Table, inspect, select
 
 from app.db import Base, engine
 from app.models import SchemaDeployment
@@ -14,52 +16,33 @@ from app.models import SchemaDeployment
 logger = logging.getLogger(__name__)
 
 
-def rebuild_sqlite_table(connection: Connection, model, columns: set[str]) -> None:
-    triggers = connection.exec_driver_sql(
-        "SELECT name FROM sqlite_schema WHERE type = 'trigger' AND tbl_name = ?", (model.name,)
-    ).scalars().all()
-    if triggers:
-        raise RuntimeError(f"Cannot rebuild {model.name} while it has triggers.")
-
-    preparer = connection.dialect.identifier_preparer
-    quote = preparer.quote
-    original = quote(model.name)
-    temporary_name = f"_migration_{uuid4().hex}"
-    temporary = quote(temporary_name)
-    metadata = MetaData()
-    for table in Base.metadata.tables.values():
-        if table is not model:
-            table.to_metadata(metadata)
-    replacement = model.to_metadata(metadata, name=temporary_name)
-
-    retained = ", ".join(quote(column.name) for column in model.columns if column.name in columns)
-    if not retained:
-        raise RuntimeError(f"Cannot rebuild {model.name} without any shared columns.")
-    connection.execute(CreateTable(replacement))
-    connection.exec_driver_sql(f"INSERT INTO {temporary} ({retained}) SELECT {retained} FROM {original}")
-    connection.exec_driver_sql(f"DROP TABLE {original}")
-    connection.exec_driver_sql(f"ALTER TABLE {temporary} RENAME TO {original}")
-    for index in model.indexes:
-        connection.execute(CreateIndex(index))
-
-
-def drop_sqlite_columns(connection: Connection, model, columns: set[str], unknown: set[str]) -> None:
+def add_missing_columns(connection: Connection, table: Table) -> int:
     quote = connection.dialect.identifier_preparer.quote
-    try:
-        with connection.begin_nested():
-            for index in inspect(connection).get_indexes(model.name):
-                if unknown.intersection(index["column_names"]):
-                    connection.exec_driver_sql(f"DROP INDEX {quote(index['name'])}")
-            for column in sorted(unknown):
-                connection.exec_driver_sql(f"ALTER TABLE {quote(model.name)} DROP COLUMN {quote(column)}")
-    except OperationalError:
-        # SQLite cannot drop columns covered by table-level constraints.
-        rebuild_sqlite_table(connection, model, columns)
+    existing = {column["name"] for column in inspect(connection).get_columns(table.name)}
+    added = 0
+    for column in table.columns:
+        if column.name in existing:
+            continue
+        if not column.nullable or column.unique:
+            raise RuntimeError(
+                f"Adding {table.name}.{column.name} needs a hand-written migration: "
+                "new columns on existing tables must be nullable and not unique."
+            )
+        ddl = (
+            f"ALTER TABLE {quote(table.name)} ADD COLUMN {quote(column.name)} "
+            f"{column.type.compile(dialect=connection.dialect)}"
+        )
+        for key in column.foreign_keys:
+            ddl += f" REFERENCES {quote(key.column.table.name)} ({quote(key.column.name)})"
+            if key.ondelete:
+                ddl += f" ON DELETE {key.ondelete}"
+        connection.exec_driver_sql(ddl)
+        added += 1
+    return added
 
 
 def reconcile(connection: Connection, deployment_id: str | None) -> None:
-    sqlite = connection.dialect.name == "sqlite"
-    if not sqlite:
+    if connection.dialect.name != "sqlite":
         connection.exec_driver_sql("SELECT pg_advisory_xact_lock(80336924018423)")
 
     deployments = SchemaDeployment.__table__
@@ -69,67 +52,26 @@ def reconcile(connection: Connection, deployment_id: str | None) -> None:
     ):
         return
 
-    inspector = inspect(connection)
-    preparer = connection.dialect.identifier_preparer
-    quote = preparer.quote
-
-    def table_name(name: str) -> str:
-        if sqlite:
-            return quote(name)
-        return f"{preparer.quote_schema(inspector.default_schema_name)}.{quote(name)}"
-
-    models = {table.name: table for table in Base.metadata.tables.values()}
-    existing = set(inspector.get_table_names())
-    stale_tables = sorted(existing - models.keys())
-    if sqlite:
-        for name in stale_tables:
-            connection.exec_driver_sql(f"DROP TABLE IF EXISTS {table_name(name)}")
-    elif stale_tables:
-        # Drop the set together so dependencies among stale tables are allowed.
-        # No CASCADE, so unrelated views or surviving constraints are protected.
-        connection.exec_driver_sql("DROP TABLE " + ", ".join(map(table_name, stale_tables)))
-
-    dropped_columns = 0
-    for name in sorted(existing & models.keys()):
-        columns = {column["name"] for column in inspector.get_columns(name)}
-        unknown = columns - {column.name for column in models[name].columns}
-        if not unknown:
-            continue
-        if sqlite:
-            drop_sqlite_columns(connection, models[name], columns, unknown)
-        else:
-            for column in sorted(unknown):
-                connection.exec_driver_sql(f"ALTER TABLE {table_name(name)} DROP COLUMN {quote(column)}")
-        dropped_columns += len(unknown)
-
+    existing = set(inspect(connection).get_table_names())
     Base.metadata.create_all(connection)
-    if sqlite and connection.exec_driver_sql("PRAGMA foreign_key_check").first() is not None:
-        raise RuntimeError("Schema migration would leave invalid foreign keys.")
+
+    added = 0
+    for table in Base.metadata.sorted_tables:
+        if table.name in existing:
+            added += add_missing_columns(connection, table)
+        for index in table.indexes:
+            index.create(connection, checkfirst=True)
+
     if deployment_id:
         connection.execute(deployments.insert().values(deployment_id=deployment_id))
-    logger.info("Schema reconciliation removed %d tables and %d columns", len(stale_tables), dropped_columns)
+    logger.info("Schema reconciliation added %d columns", added)
 
 
 def migrate_schema(database: Engine, deployment_id: str | None = None) -> None:
-    if database.dialect.name == "postgresql":
-        with database.begin() as connection:
-            reconcile(connection, deployment_id)
-        return
-    if database.dialect.name != "sqlite":
+    if database.dialect.name not in ("postgresql", "sqlite"):
         raise RuntimeError("Schema migration supports PostgreSQL and SQLite.")
-
-    with database.connect() as connection:
-        foreign_keys = connection.exec_driver_sql("PRAGMA foreign_keys").scalar_one()
-        connection.exec_driver_sql("PRAGMA foreign_keys = OFF")
-        connection.commit()
-        try:
-            with connection.begin():
-                # sqlite3 does not start a transaction for DDL by default.
-                connection.exec_driver_sql("BEGIN IMMEDIATE")
-                reconcile(connection, deployment_id)
-        finally:
-            if foreign_keys:
-                connection.exec_driver_sql("PRAGMA foreign_keys = ON")
+    with database.begin() as connection:
+        reconcile(connection, deployment_id)
 
 
 if __name__ == "__main__":

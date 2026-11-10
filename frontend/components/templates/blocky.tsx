@@ -1,12 +1,13 @@
 import { Press_Start_2P, VT323 } from "next/font/google";
-import { displayHost, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
+import { displayHost, paragraphs, safeHref, safeImage, type PortfolioContent } from "@/lib/portfolio";
+import { UserImage } from "./user-image";
 import styles from "./blocky.module.css";
 
 const pixel = Press_Start_2P({ subsets: ["latin"], weight: "400", variable: "--bk-pixel" });
 const body = VT323({ subsets: ["latin"], weight: "400", variable: "--bk-body" });
 
 export function Blocky({ content }: { content: PortfolioContent }) {
-  const { name, headline, bio, projects, links } = content;
+  const { name, avatar, headline, bio, projects, links } = content;
   const about = paragraphs(bio);
 
   return (
@@ -18,6 +19,7 @@ export function Blocky({ content }: { content: PortfolioContent }) {
       </div>
 
       <header className={styles.hero}>
+        <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
         <p className={styles.welcome}>Welcome to the world of</p>
         <h1>{name}</h1>
         {headline && <p className={styles.tooltip}>{headline}</p>}
@@ -42,7 +44,11 @@ export function Blocky({ content }: { content: PortfolioContent }) {
                   const href = safeHref(project.url);
                   return (
                     <li key={index} className={styles.panel}>
-                      <span className={`${styles.block} ${styles[`block${index % 6}`]}`} aria-hidden="true" />
+                      {safeImage(project.image) ? (
+                        <UserImage src={project.image} alt="" className={styles.thumb} />
+                      ) : (
+                        <span className={`${styles.block} ${styles[`block${index % 6}`]}`} aria-hidden="true" />
+                      )}
                       <div>
                         <h3>{project.title}</h3>
                         {project.description && <p>{project.description}</p>}

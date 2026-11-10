@@ -36,6 +36,7 @@ export default async function TemplatePage({ params }: PageProps<"/templates/[id
         <div>
           <h1>{template.name}</h1>
           <p>{template.tagline}</p>
+          <Link className="primary-link" href={`/dashboard?template=${template.id}`} style={{ marginTop: 22 }}>Use this template</Link>
         </div>
         <dl>
           <div>

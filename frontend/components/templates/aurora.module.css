@@ -56,3 +56,6 @@
   .pills a, .card { transition: none; }
   .pills a:hover, .card:hover { transform: none; }
 }
+
+.photo { display: block; width: 104px; height: 104px; border: 2px solid #ffffff40; border-radius: 50%; object-fit: cover; box-shadow: 0 0 60px #7c5cff80; }
+.cover { display: block; width: 100%; aspect-ratio: 16 / 9; margin-bottom: 16px; border-radius: 14px; object-fit: cover; }

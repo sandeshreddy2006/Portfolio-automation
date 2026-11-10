@@ -1,7 +1,7 @@
 """Validate portfolio input and define the data exposed by the public page."""
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, StringConstraints
 
@@ -21,11 +21,16 @@ class PortfolioProject(BaseModel):
     title: Title
     description: str = Field(default="", max_length=4000)
     url: HttpUrl | None = None
+    # URL of an image uploaded through /api/uploads; checked against the owner in portfolios.py.
+    image: str | None = Field(default=None, max_length=300)
 
 
 class PortfolioContent(BaseModel):
     template_id: Slug
     name: Title
+    avatar: str | None = Field(default=None, max_length=300)
+    # Off by default: a portfolio is reachable by its link, not by search engines, unless the owner opts in.
+    search_visible: bool = False
     headline: str = Field(default="", max_length=160)
     bio: str = Field(default="", max_length=4000)
     projects: list[PortfolioProject] = Field(default_factory=list, max_length=30)
@@ -39,6 +44,28 @@ class PortfolioCreate(BaseModel):
 
 class PortfolioUpdate(BaseModel):
     draft_content: PortfolioContent
+    # The revision this edit started from. If someone saved in between, the save is refused.
+    base_revision: int | None = None
+
+
+class PortfolioRename(BaseModel):
+    slug: Slug
+
+
+class PortfolioSummary(BaseModel):
+    slug: Slug
+    revision: int = 0
+    template_id: str
+    name: str
+    published: bool
+    has_unpublished_changes: bool
+    published_at: datetime | None
+    updated_at: datetime
+
+
+class PortfolioDetail(PortfolioSummary):
+    draft_content: PortfolioContent
+    published_content: PortfolioContent | None
 
 
 class PublicPortfolio(BaseModel):
@@ -84,3 +111,16 @@ class GoogleIdentity(BaseModel):
     subject: str = Field(min_length=1, max_length=255)
     email: EmailStr
     name: str = Field(max_length=120)
+
+
+class ReportCreate(BaseModel):
+    reason: Literal["spam", "impersonation", "harassment", "illegal", "other"]
+    details: str = Field(default="", max_length=1000)
+    contact: EmailStr | None = None
+
+
+class AssistRequest(BaseModel):
+    task: Literal["headline", "bio", "project"]
+    text: str = Field(min_length=1, max_length=4000)
+    name: str = Field(default="", max_length=120)
+    title: str = Field(default="", max_length=120)

@@ -1,3 +1,5 @@
 /backend/.env
 /backend/portfolio.db*
 __pycache__/
+/backend/.venv/
+/backend/uploads/
