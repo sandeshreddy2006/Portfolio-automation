@@ -17,8 +17,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth_email import send_account_notice, send_verification_code
+from app.emailcheck import verify_email_domain
 from app.db import get_db
 from app.google_oauth import frontend_origin, google_authorization, google_config, google_identity
+from app.media import purge_user_media
+from app.slugs import hold_user_slugs
 from app.models import AuthChallenge, AuthRateLimit, AuthSession, User
 from app.schemas import AccountDetails, GoogleIdentity, PasswordLogin, RegisterAccount, SetAccountPassword, VerifyAccountCode
 
@@ -191,6 +194,7 @@ def create_session(
 @router.post("/register")
 def register(body: RegisterAccount, response: Response, db: Database):
     email = body.email.lower()
+    verify_email_domain(email)
     if db.scalar(select(User.id).where(User.email == email)) is not None:
         # Return the same next step without sending codes for an existing account.
         throttle_email(db, email)
@@ -401,6 +405,8 @@ def confirm_account_deletion(
     email = user.email
     db.execute(delete(AuthChallenge).where(or_(AuthChallenge.email == email, AuthChallenge.user_id == user.id)))
     db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))
+    purge_user_media(db, user.id)
+    hold_user_slugs(db, user.id)
     db.delete(user)
     try:
         db.commit()
@@ -503,7 +509,7 @@ def google_callback(request: Request, db: Database, background: BackgroundTasks,
         if step == "link-mismatch":
             response.headers["location"] = "/auth?error=link-mismatch"
         else:
-            response.headers["location"] = "/auth" if step == "signed-in" else f"/auth?step={step}"
+            response.headers["location"] = "/dashboard" if step == "signed-in" else f"/auth?step={step}"
     except (HTTPException, IntegrityError) as error:
         db.rollback()
         if isinstance(error, HTTPException) and error.status_code in (429, 503):

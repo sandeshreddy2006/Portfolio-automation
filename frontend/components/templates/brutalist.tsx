@@ -1,18 +1,20 @@
 import { Space_Grotesk, Space_Mono } from "next/font/google";
 import { displayHost, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
+import { UserImage } from "./user-image";
 import styles from "./brutalist.module.css";
 
 const display = Space_Grotesk({ subsets: ["latin"], weight: ["500", "700"], variable: "--br-display" });
 const mono = Space_Mono({ subsets: ["latin"], weight: ["400", "700"], variable: "--br-mono" });
 
 export function Brutalist({ content }: { content: PortfolioContent }) {
-  const { name, headline, bio, projects, links } = content;
+  const { name, avatar, headline, bio, projects, links } = content;
   const about = paragraphs(bio);
 
   return (
     <div className={`${styles.root} ${display.variable} ${mono.variable}`}>
       <main className={styles.wrap}>
         <header className={styles.hero}>
+          <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
           <p className={styles.tag}>Portfolio</p>
           <h1>{name}</h1>
           {headline && <p className={styles.headline}>{headline}</p>}
@@ -37,6 +39,7 @@ export function Brutalist({ content }: { content: PortfolioContent }) {
                 return (
                   <article key={index} className={styles.card}>
                     <span className={styles.num}>{String(index + 1).padStart(2, "0")}</span>
+                    <UserImage src={project.image} alt="" className={styles.cover} />
                     <h3>{project.title}</h3>
                     {project.description && <p>{project.description}</p>}
                     {href && (

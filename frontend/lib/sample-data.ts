@@ -7,6 +7,7 @@ export const sampleVariants: SampleVariant[] = ["full", "sparse"];
 const full: PortfolioContent = {
   template_id: "",
   name: "Alex Morgan",
+  avatar: "/sample/avatar.svg",
   headline: "Product designer & front-end developer",
   bio: "I design and build small, careful interfaces for people who are tired of clutter. Right now I'm finishing a degree in interaction design and freelancing for early-stage teams.\n\nI care about the last 10%: empty states, loading states, and the words on the button. Most of what I've learned came from shipping something, watching someone get confused by it, and fixing it.",
   projects: [
@@ -15,18 +16,21 @@ const full: PortfolioContent = {
       description:
         "A habit tracker that rewards consistency instead of streaks. I designed the system and built the web app in React. 2,000 people used it in the first month and I learned how much an onboarding screen can lose you.",
       url: "https://example.com/tidepool",
+      image: "/sample/project-1.svg",
     },
     {
       title: "Field Notes",
       description:
         "An offline-first notes app for researchers working without a signal. My part was the sync engine and the conflict UI.",
       url: "https://example.com/field-notes",
+      image: "/sample/project-2.svg",
     },
     {
       title: "Plantpal Rebrand",
       description:
         "Identity, packaging and a landing page for a houseplant subscription. Sales of the starter box rose after the relaunch.",
       url: "https://example.com/plantpal",
+      image: "/sample/project-3.svg",
     },
     {
       title: "Commute Map",

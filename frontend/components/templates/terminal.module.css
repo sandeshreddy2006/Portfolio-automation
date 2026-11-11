@@ -55,3 +55,6 @@
 @media (prefers-reduced-motion: reduce) {
   .cursor { animation: none; }
 }
+
+.avatar { display: block; width: 96px; height: 96px; margin: 14px 0 4px; border: 1px solid var(--green); border-radius: 6px; object-fit: cover; }
+.thumb { display: block; width: 100%; max-width: 380px; aspect-ratio: 16 / 9; margin-top: 10px; border: 1px solid var(--line); border-radius: 4px; object-fit: cover; }

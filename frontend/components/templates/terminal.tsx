@@ -1,5 +1,6 @@
 import { JetBrains_Mono } from "next/font/google";
 import { displayHost, paragraphs, safeHref, slugify, type PortfolioContent } from "@/lib/portfolio";
+import { UserImage } from "./user-image";
 import styles from "./terminal.module.css";
 
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--tm-mono" });
@@ -14,7 +15,7 @@ function Prompt({ command }: { command?: string }) {
 }
 
 export function Terminal({ content }: { content: PortfolioContent }) {
-  const { name, headline, bio, projects, links } = content;
+  const { name, avatar, headline, bio, projects, links } = content;
   const about = paragraphs(bio);
 
   return (
@@ -28,6 +29,7 @@ export function Terminal({ content }: { content: PortfolioContent }) {
 
         <main className={styles.body}>
           <Prompt command="whoami" />
+          <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
           <h1>{name}</h1>
           {headline && <p className={styles.headline}>{headline}</p>}
 
@@ -58,6 +60,7 @@ export function Terminal({ content }: { content: PortfolioContent }) {
                           )}
                         </h2>
                         {project.description && <p>{project.description}</p>}
+                        <UserImage src={project.image} alt="" className={styles.thumb} />
                         {href && <small>{displayHost(href)}</small>}
                       </div>
                     </li>

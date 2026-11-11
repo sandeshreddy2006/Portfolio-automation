@@ -1,3 +1,4 @@
+import mimetypes
 import os
 from contextlib import asynccontextmanager
 
@@ -6,10 +7,16 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.auth import router as auth_router
 from app.db import engine
+from app.media import LOCAL_DIR, local_development, r2_configured
+from app.ai import router as ai_router
 from app.migrate import migrate_schema
+from app.portfolios import router as portfolios_router
+from app.reports import router as reports_router
+from app.uploads import router as uploads_router
 
 
 @asynccontextmanager
@@ -20,6 +27,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Portfolio Automation", lifespan=lifespan)
 app.include_router(auth_router)
+app.include_router(portfolios_router)
+app.include_router(uploads_router)
+app.include_router(reports_router)
+app.include_router(ai_router)
+
+if local_development() and not r2_configured():
+    # Development only: serve uploaded images from disk. Production uses Cloudflare R2.
+    mimetypes.add_type("image/webp", ".webp")  # not registered on every OS
+    LOCAL_DIR.mkdir(exist_ok=True)
+    app.mount("/media", StaticFiles(directory=LOCAL_DIR), name="media")
 
 
 @app.exception_handler(RequestValidationError)

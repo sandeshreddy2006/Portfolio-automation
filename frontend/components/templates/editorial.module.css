@@ -79,3 +79,6 @@
   .about, .work, .footer { grid-template-columns: 1fr; gap: 16px; }
   .work li { grid-template-columns: 40px 1fr; }
 }
+
+.avatar { display: block; width: clamp(84px, 11vw, 132px); aspect-ratio: 1; margin-bottom: 28px; border: 1px solid var(--ink); border-radius: 50%; object-fit: cover; }
+.cover { display: block; width: 100%; max-width: 560px; aspect-ratio: 16 / 9; margin-bottom: 18px; border-radius: 2px; object-fit: cover; }

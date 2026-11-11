@@ -56,3 +56,6 @@
 @media (prefers-reduced-motion: reduce) {
   .card, .buttons a { transition: none; }
 }
+
+.avatar { display: block; width: clamp(96px, 14vw, 170px); aspect-ratio: 1; margin: 0 0 24px; border: 3px solid var(--ink); background: #fff; box-shadow: 6px 6px 0 var(--ink); object-fit: cover; transform: rotate(-3deg); }
+.cover { display: block; width: 100%; aspect-ratio: 16 / 10; margin-top: 14px; border: 3px solid var(--ink); object-fit: cover; }

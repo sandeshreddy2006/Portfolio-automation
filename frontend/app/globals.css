@@ -63,7 +63,7 @@ p, h1, h2, h3, figure, ol { margin: 0; }
 
 .hero h1 {
   margin-block: 23px 25px;
-  font-size: clamp(57px, 6.55vw, 101px);
+  font-size: clamp(48px, 5.3vw, 84px);
   font-weight: 760;
   line-height: .95;
   letter-spacing: -.087em;
@@ -367,4 +367,63 @@ p, h1, h2, h3, figure, ol { margin: 0; }
 
 @media (max-width: 410px) {
   .site-header .source-link { display: none; }
+}
+
+/* Legal links and hero actions */
+.legal-links { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+.legal-links a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; }
+
+/* ---- Landing: designs, features, FAQ, closing call to action ---- */
+.section { padding: clamp(48px, 7vw, 88px) 0 clamp(24px, 4vw, 48px); border-top: 1px solid var(--line); scroll-margin-top: 22px; }
+.section-heading { max-width: 720px; }
+.section-heading h2 { margin-top: 13px; font-size: clamp(30px, 4.2vw, 56px); font-weight: 720; line-height: 1.02; letter-spacing: -.06em; }
+.section-heading > p:last-child:not(.eyebrow) { margin-top: 14px; color: var(--muted); font-size: clamp(16px, 1.5vw, 19px); line-height: 1.55; }
+
+.design-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin: 36px 0 0; padding: 0; list-style: none; }
+.design-card { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #fff; transition: transform 200ms, box-shadow 200ms; }
+.design-card:hover { transform: translateY(-5px); box-shadow: 0 22px 44px #19211b24; }
+.design-card:focus-visible { outline: 2px solid #3d6124; outline-offset: 4px; }
+.design-card img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); background: #eee; }
+.design-meta { display: grid; gap: 4px; padding: 16px 18px 20px; }
+.design-meta strong { font-size: 20px; letter-spacing: -.04em; }
+.design-meta small { color: var(--muted); font-size: 14px; line-height: 1.45; }
+
+.feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin: 36px 0 0; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--line); list-style: none; }
+.feature-grid li { padding: clamp(20px, 2.6vw, 34px); background: var(--paper); }
+.feature-icon { display: inline-grid; width: 42px; height: 42px; place-items: center; border: 1px solid #c1ce9a; border-radius: 8px; background: #e8efce; color: #34501f; }
+.feature-grid h3 { margin: 20px 0 8px; font-size: clamp(18px, 1.8vw, 23px); font-weight: 700; letter-spacing: -.05em; }
+.feature-grid p { color: var(--muted); font-size: 15px; line-height: 1.55; }
+
+.faq-list { display: grid; max-width: 820px; margin-top: 32px; border-top: 1px solid var(--line); }
+.faq-list details { border-bottom: 1px solid var(--line); }
+.faq-list summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 4px; cursor: pointer; font-size: clamp(17px, 1.7vw, 20px); font-weight: 650; letter-spacing: -.03em; list-style: none; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after { content: "+"; flex: none; display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid var(--line); border-radius: 50%; font-size: 18px; font-weight: 400; transition: transform 180ms, background-color 180ms; }
+.faq-list details[open] summary::after { transform: rotate(45deg); background: var(--lime); }
+.faq-list summary:focus-visible { outline: 2px solid #3d6124; outline-offset: 2px; border-radius: 6px; }
+.faq-list details p { max-width: 68ch; padding: 0 4px 22px; color: var(--muted); font-size: 16px; line-height: 1.6; }
+
+.cta-band { display: grid; justify-items: start; gap: 14px; margin: clamp(40px, 6vw, 72px) 0; padding: clamp(28px, 5vw, 64px); border-radius: 14px; background: #17251b; color: #ecf0df; }
+.cta-band h2 { font-size: clamp(32px, 5vw, 64px); font-weight: 740; line-height: 1; letter-spacing: -.06em; }
+.cta-band p { max-width: 46ch; color: #c7d3ba; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.5; }
+.cta-band .primary-link { margin-top: 8px; color: var(--ink); }
+
+@media (max-width: 1000px) {
+  .design-grid, .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  /* The designs become a swipeable strip so six large previews don't make a very long page. */
+  .design-grid { display: flex; gap: 14px; margin-inline: -18px; padding: 4px 18px 18px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .design-grid::-webkit-scrollbar { display: none; }
+  .design-grid li { flex: 0 0 78%; scroll-snap-align: center; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .site-header nav { gap: 12px; }
+  .site-header nav .workflow-link:not(:first-child) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .design-card, .faq-list summary::after { transition: none; }
+  .design-card:hover { transform: none; }
 }

@@ -1,0 +1,53 @@
+import type { Metadata } from "next";
+import LegalPage, { CONTACT_EMAIL } from "../legal-page";
+
+export const metadata: Metadata = { title: "Privacy Policy | Portfolabs", description: "What Portfolabs collects, why, and the choices you have." };
+
+export default function PrivacyPage() {
+  return (
+    <LegalPage title="Privacy Policy" updated="10 November 2026">
+      <p>Portfolabs helps you build and publish a portfolio website. This page explains what we collect, why, and the choices you have. We keep it short and plain on purpose.</p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Your account:</strong> your name, email address, and either a password (stored only as a salted hash, never in readable form) or your Google account identifier if you sign in with Google.</li>
+        <li><strong>Your portfolios:</strong> everything you type into the editor (name, headline, bio, projects, links) and the images you upload.</li>
+        <li><strong>Security records:</strong> sign-in sessions and short-lived counters used to stop abuse, such as too many sign-in attempts.</li>
+        <li><strong>Reports:</strong> if someone reports a portfolio, we keep the report and any contact email they choose to give us.</li>
+      </ul>
+
+      <h2>What is public</h2>
+      <p>A portfolio you publish is public to anyone with its link. By default, search engines are asked <em>not</em> to list it. You can allow search engines in the editor at any time. Drafts are never public. Anything you put in a published portfolio, including images, can be seen and copied by visitors, so don’t include anything you want to keep private.</p>
+
+      <h2>How we use it</h2>
+      <ul>
+        <li>To run your account and show your portfolios.</li>
+        <li>To send emails you need: sign-in verification codes, a note when someone signs in, and a message when you first publish a portfolio.</li>
+        <li>To keep the service safe and fair, for example rate limits and handling reports.</li>
+      </ul>
+      <p>We do not sell your data and we do not show ads. We will not use your content to train AI models unless you have clearly agreed to it first.</p>
+
+      <h2>Writing assistant</h2>
+      <p>If you click “Improve with AI”, the text you chose is sent to Google’s Gemini service to produce a suggestion. It is only sent when you click, and we don’t send anything else from your account. Google’s terms for the free Gemini service allow it to use that text to improve its products, so don’t use the assistant on anything private.</p>
+
+      <h2>Who helps us run the service</h2>
+      <p>We use trusted providers to host and operate Portfolabs: Vercel (website hosting), Railway (server and database), Cloudflare (image storage), our email provider, and Google (sign-in, if you choose it, and the writing assistant). They process data only to provide their service to us.</p>
+
+      <h2>Cookies</h2>
+      <p>We use only the cookies needed to keep you signed in and to complete sign-in safely. We don’t use advertising or tracking cookies.</p>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>Edit or delete any portfolio at any time. Deleting a portfolio removes it from the web immediately.</li>
+        <li>Delete your account from the account menu. This removes your account, your portfolios and your uploaded images. Backups can take a short while to clear.</li>
+        <li>Ask us what we hold about you, or to correct it, by emailing <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>Portfolabs is meant for people aged 16 and over. If you are younger, please ask a parent or guardian before using it.</p>
+
+      <h2>Changes and contact</h2>
+      <p>If we change this policy in a way that matters, we’ll update the date above and, for big changes, tell you by email. Questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
+    </LegalPage>
+  );
+}

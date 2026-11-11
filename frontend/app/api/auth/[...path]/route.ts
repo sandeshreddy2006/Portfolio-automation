@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import type { NextRequest } from "next/server";
 import { authCookieHeader, authHeaders, backendAuthUrl } from "../backend";
 
@@ -45,6 +46,11 @@ async function forward(
       method: request.method, headers, body,
       redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(25_000),
     });
+    // A deleted account's public pages must stop being served right away, not when the cache expires.
+    if (upstream.ok && endpoint === "delete/confirm") {
+      revalidateTag("portfolios", { expire: 0 });
+      revalidateTag("portfolio-index", { expire: 0 });
+    }
     const outgoing = new Headers(authHeaders);
     for (const name of ["content-type", "location", "retry-after"]) {
       const value = upstream.headers.get(name);

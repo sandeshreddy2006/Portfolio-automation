@@ -19,6 +19,11 @@ database_url = (
     else URL.create("sqlite", database=str(BACKEND_DIR / "portfolio.db"))
 )
 
+if database_url.get_backend_name() == "sqlite" and database_url.database not in (None, "", ":memory:"):
+    # A relative path (like the one in .env.example) means "next to the backend", wherever
+    # the command is run from. Otherwise each folder would quietly get its own database.
+    database_url = database_url.set(database=str((BACKEND_DIR / database_url.database).resolve()))
+
 if database_url.drivername in {"postgres", "postgresql"}:
     database_url = database_url.set(drivername="postgresql+psycopg")
 

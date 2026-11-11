@@ -21,7 +21,13 @@ class Portfolio(Base):
     __tablename__ = "portfolios"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Nullable only so the column can be added to an existing table; the API always sets it.
+    owner_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
     slug: Mapped[str] = mapped_column(String(64), unique=True)
+    # Counts saves of the draft, so two tabs can't silently overwrite each other. NULL means 0.
+    revision: Mapped[int | None]
     draft_content: Mapped[dict[str, Any]] = mapped_column(PORTFOLIO_DOCUMENT)
     published_content: Mapped[dict[str, Any] | None] = mapped_column(PORTFOLIO_DOCUMENT)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -48,6 +54,48 @@ class User(Base):
     @property
     def google_connected(self) -> bool:
         return self.google_subject is not None
+
+
+class Upload(Base):
+    """An image stored for a user, kept for quota limits and cleanup."""
+
+    __tablename__ = "uploads"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    key: Mapped[str] = mapped_column(String(80), unique=True)
+    size: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class SlugHold(Base):
+    """A recently deleted portfolio address that can't be claimed by someone else yet."""
+
+    __tablename__ = "slug_holds"
+
+    slug: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # Not a foreign key: the hold must outlive a deleted account.
+    owner_id: Mapped[int | None]
+    until: Mapped[int] = mapped_column(index=True)
+    # Set when the portfolio was renamed: visitors of the old address are sent to the new one.
+    redirect_to: Mapped[str | None] = mapped_column(String(64))
+
+
+class Report(Base):
+    """A visitor's report about a published portfolio."""
+
+    __tablename__ = "reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(String(64), index=True)
+    reason: Mapped[str] = mapped_column(String(24))
+    details: Mapped[str] = mapped_column(String(1000))
+    contact: Mapped[str | None] = mapped_column(String(254))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
 
 class AuthChallenge(Base):

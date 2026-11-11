@@ -1,11 +1,12 @@
 import { Sora } from "next/font/google";
 import { displayHost, initials, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
+import { UserImage } from "./user-image";
 import styles from "./aurora.module.css";
 
 const sora = Sora({ subsets: ["latin"], variable: "--au-sans" });
 
 export function Aurora({ content }: { content: PortfolioContent }) {
-  const { name, headline, bio, projects, links } = content;
+  const { name, avatar, headline, bio, projects, links } = content;
   const about = paragraphs(bio);
 
   return (
@@ -14,7 +15,11 @@ export function Aurora({ content }: { content: PortfolioContent }) {
 
       <main className={styles.content}>
         <header className={styles.hero}>
-          <div className={styles.badge} aria-hidden="true">{initials(name)}</div>
+          {avatar ? (
+            <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.photo} priority />
+          ) : (
+            <div className={styles.badge} aria-hidden="true">{initials(name)}</div>
+          )}
           <h1>{name}</h1>
           {headline && <p className={styles.headline}>{headline}</p>}
           {links.length > 0 && (
@@ -51,6 +56,7 @@ export function Aurora({ content }: { content: PortfolioContent }) {
                 const href = safeHref(project.url);
                 return (
                   <article key={index} className={`${styles.glass} ${styles.card}`}>
+                    <UserImage src={project.image} alt="" className={styles.cover} />
                     <span className={styles.num}>{String(index + 1).padStart(2, "0")}</span>
                     <h3>{project.title}</h3>
                     {project.description && <p>{project.description}</p>}

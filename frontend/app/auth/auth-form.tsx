@@ -123,6 +123,8 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
         window.location.replace("/auth?status=deleted");
       } else if (result.step === "verify" || result.step === "password" || result.step === "delete-confirm") {
         window.location.replace(`/auth?step=${result.step}`);
+      } else if (result.step === "signed-in") {
+        window.location.replace("/dashboard");
       } else {
         window.location.replace("/auth");
       }
@@ -231,6 +233,9 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
           setResendCount((count) => count + 1);
           setMessage("");
         }} />
+      )}
+      {initialStep === "register" && (
+        <p className="account-switch">By creating an account you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</p>
       )}
       {initialStep === "login" ? (
         <p className="account-switch">New to Portfolabs? <Link href="/auth?step=register">Create an account</Link></p>
