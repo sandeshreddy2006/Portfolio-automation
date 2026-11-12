@@ -10,6 +10,7 @@ import os
 import re
 import warnings
 from functools import lru_cache
+from urllib.parse import urlsplit
 
 from fastapi import HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -30,7 +31,7 @@ Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 def r2_configured() -> bool:
     return all(
         os.getenv(name)
-        for name in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_URL")
+        for name in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET")
     )
 
 
@@ -43,16 +44,52 @@ def storage_available() -> bool:
 
 
 def media_base() -> str:
-    """Public URL prefix every stored image lives under."""
-    if r2_configured():
-        return os.environ["R2_PUBLIC_URL"].rstrip("/")
-    return (os.getenv("BACKEND_PUBLIC_URL") or "http://127.0.0.1:8000").rstrip("/") + "/media"
+    """Site-relative URL prefix for all uploaded images."""
+    return "/media"
 
 
-def owned_media_url(url: str | None, user_id: int) -> bool:
-    """True only for an image this server stored for this user."""
-    prefix = f"{media_base()}/u{user_id}/"
-    return bool(url) and url.startswith(prefix) and KEY_PATTERN.fullmatch(url[len(prefix):]) is not None
+def image_key(url: str | None, user_id: int | None) -> str | None:
+    if not url or user_id is None:
+        return None
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return None
+    parts = parsed.path.rsplit("/", 2)
+    if len(parts) != 3:
+        return None
+    prefix, folder, filename = parts
+    if (parsed.query or parsed.fragment or folder != f"u{user_id}"
+            or not KEY_PATTERN.fullmatch(filename)):
+        return None
+    if parsed.scheme in {"http", "https"} and parsed.netloc:
+        # Legacy records contain an absolute R2 or local URL. Only reuse its key.
+        if {"..", "."}.intersection(parsed.path.split("/")):
+            return None
+    elif parsed.scheme or parsed.netloc or prefix != media_base():
+        return None
+    return f"{folder}/{filename}"
+
+
+def image_urls(content: dict):
+    yield content.get("avatar")
+    for project in content.get("projects", []):
+        yield project.get("image")
+
+
+def normalize_images(content: dict, user_id: int | None) -> dict:
+    def canonical(url):
+        key = image_key(url, user_id)
+        return f"{media_base()}/{key}" if key else None
+
+    return {
+        **content,
+        "avatar": canonical(content.get("avatar")),
+        "projects": [
+            {**project, "image": canonical(project.get("image"))}
+            for project in content.get("projects", [])
+        ],
+    }
 
 
 def process_image(data: bytes, kind: str) -> bytes:
@@ -102,13 +139,28 @@ def store(key: str, data: bytes) -> None:
     if r2_configured():
         r2_client().put_object(
             Bucket=os.environ["R2_BUCKET"], Key=key, Body=data, ContentType="image/webp",
-            # File names are random and never reused, so browsers may cache them forever.
-            CacheControl="public, max-age=31536000, immutable",
         )
         return
     path = LOCAL_DIR / key
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
+
+
+def read_image(key: str) -> bytes:
+    if r2_configured():
+        from botocore.exceptions import ClientError
+
+        try:
+            body = r2_client().get_object(Bucket=os.environ["R2_BUCKET"], Key=key)["Body"]
+        except ClientError as error:
+            if error.response["Error"]["Code"] in {"NoSuchKey", "404", "NotFound"}:
+                raise FileNotFoundError(key) from error
+            raise
+        try:
+            return body.read()
+        finally:
+            body.close()
+    return (LOCAL_DIR / key).read_bytes()
 
 
 def remove(keys: list[str]) -> None:
@@ -153,7 +205,6 @@ def cleanup_user_media(user_id: int, min_age_seconds: int = 3600) -> None:
 
     try:
         with SessionLocal() as db:
-            prefix = media_base() + "/"
             used: set[str] = set()
             for documents in db.execute(
                 select(Portfolio.draft_content, Portfolio.published_content).where(Portfolio.owner_id == user_id)
@@ -161,8 +212,7 @@ def cleanup_user_media(user_id: int, min_age_seconds: int = 3600) -> None:
                 for content in documents:
                     if not content:
                         continue
-                    urls = [content.get("avatar"), *(project.get("image") for project in content.get("projects", []))]
-                    used.update(url.removeprefix(prefix) for url in urls if url)
+                    used.update(key for url in image_urls(content) if (key := image_key(url, user_id)))
 
             cutoff = datetime.now(timezone.utc) - timedelta(seconds=min_age_seconds)
             stale = []

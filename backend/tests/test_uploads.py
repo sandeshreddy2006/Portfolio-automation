@@ -1,10 +1,13 @@
 import io
+from unittest.mock import Mock
 
 import pytest
 from PIL import Image
+from sqlalchemy import select
 
 from app import auth_email, media, portfolios, uploads
 from app.db import SessionLocal
+from app.models import Portfolio
 from conftest import content, login_as, make_user
 
 
@@ -113,6 +116,58 @@ def test_portfolio_accepts_only_the_owners_own_images(client):
     assert create(alex, "proj", projects=[project]).status_code == 422
     good = {"title": "A", "description": "", "url": None, "image": alex_image}
     assert create(alex, "good-one", projects=[good]).status_code == 201
+
+
+def test_media_visibility_follows_the_published_snapshot(client):
+    owner = login_as(make_user())
+    stranger = login_as(make_user("stranger@example.com"))
+    image = upload(owner, image_bytes()).json()["url"]
+    assert owner.get(image).status_code == 200
+    assert client.get(image).status_code == 404
+    assert stranger.get(image).status_code == 404
+
+    assert owner.post("/api/portfolios", json={"slug": "alex", "draft_content": content(avatar=image)}).status_code == 201
+    assert client.get(image).status_code == 404
+    assert owner.post("/api/portfolios/alex/publish").status_code == 200
+    public = client.get(image)
+    assert public.status_code == 200
+    assert public.headers["content-type"] == "image/webp"
+    assert "no-store" in public.headers["cache-control"]
+
+    draft_image = upload(owner, image_bytes()).json()["url"]
+    assert owner.put("/api/portfolios/alex", json={"draft_content": content(avatar=draft_image)}).status_code == 200
+    assert client.get(draft_image).status_code == 404
+    assert client.get(image).status_code == 200
+    assert owner.post("/api/portfolios/alex/unpublish").status_code == 200
+    assert client.get(image).status_code == 404
+    assert owner.get(draft_image).status_code == 200
+
+
+def test_legacy_image_is_served_from_private_r2(client, monkeypatch):
+    owner = login_as(make_user())
+    image = upload(owner, image_bytes()).json()["url"]
+    key = image.removeprefix("/media/")
+    stored = (media.LOCAL_DIR / key).read_bytes()
+    assert owner.post("/api/portfolios", json={"slug": "alex", "draft_content": content(avatar=image)}).status_code == 201
+    assert owner.post("/api/portfolios/alex/publish").status_code == 200
+    with SessionLocal.begin() as db:
+        portfolio = db.scalar(select(Portfolio).where(Portfolio.slug == "alex"))
+        legacy = f"https://old-assets.example.com/{key}"
+        portfolio.draft_content = {**portfolio.draft_content, "avatar": legacy}
+        portfolio.published_content = {**portfolio.published_content, "avatar": legacy}
+
+    for name in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"):
+        monkeypatch.setenv(name, "example")
+    monkeypatch.delenv("R2_PUBLIC_URL", raising=False)
+    storage = Mock()
+    storage.get_object.return_value = {"Body": io.BytesIO(stored)}
+    monkeypatch.setattr(media, "r2_client", lambda: storage)
+
+    assert media.r2_configured()
+    assert owner.get("/api/portfolios/alex").json()["draft_content"]["avatar"] == image
+    assert client.get("/api/public/alex").json()["published_content"]["avatar"] == image
+    assert client.get(image).content == stored
+    storage.get_object.assert_called_once_with(Bucket="example", Key=key)
 
 
 def test_first_publish_sends_one_email(client, monkeypatch):

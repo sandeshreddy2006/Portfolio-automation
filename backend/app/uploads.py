@@ -4,23 +4,57 @@ import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import media
-from app.auth import throttle
+from app.auth import current_user, throttle
 from app.db import get_db
-from app.models import Upload
+from app.models import Portfolio, Upload
 from app.portfolios import require_user
 
 router = APIRouter(prefix="/api", tags=["uploads"])
+media_router = APIRouter(tags=["uploads"])
 logger = logging.getLogger(__name__)
 Database = Annotated[Session, Depends(get_db)]
 
 MAX_FILES_PER_USER = 60
 MAX_BYTES_PER_USER = 60 * 1024 * 1024
+MEDIA_HEADERS = {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
+
+
+@media_router.get("/media/{owner_folder}/{filename}")
+def serve_image(owner_folder: str, filename: str, request: Request, db: Database):
+    missing = HTTPException(404, "Image not found.", headers=MEDIA_HEADERS)
+    if (not owner_folder.startswith("u") or not owner_folder[1:].isascii()
+            or not owner_folder[1:].isdigit() or not media.KEY_PATTERN.fullmatch(filename)):
+        raise missing
+    key = f"{owner_folder}/{filename}"
+    upload = db.scalar(select(Upload).where(Upload.key == key))
+    if upload is None:
+        raise missing
+    user = current_user(request, db)
+    if user is None or user.id != upload.owner_id:
+        published = db.scalars(select(Portfolio.published_content).where(
+            Portfolio.owner_id == upload.owner_id, Portfolio.published_content.is_not(None),
+        ))
+        if not any(
+            media.image_key(url, upload.owner_id) == key
+            for content in published for url in media.image_urls(content)
+        ):
+            raise missing
+    if not media.storage_available():
+        raise missing
+    try:
+        data = media.read_image(key)
+    except FileNotFoundError:
+        raise missing
+    except Exception as error:
+        logger.warning("Image read failed (%s)", type(error).__name__)
+        raise HTTPException(503, "Image unavailable.", headers=MEDIA_HEADERS) from error
+    return Response(data, media_type="image/webp", headers=MEDIA_HEADERS)
 
 
 async def read_body(request: Request) -> bytes:

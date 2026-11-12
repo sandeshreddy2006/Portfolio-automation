@@ -13,8 +13,8 @@ from app.auth import current_user, throttle
 from app.auth_email import send_portfolio_live
 from app.db import get_db
 from app.google_oauth import frontend_origin
-from app.media import cleanup_user_media, owned_media_url
-from app.models import Portfolio, User
+from app.media import cleanup_user_media, image_key, image_urls, normalize_images
+from app.models import Portfolio, Upload, User
 from app.models import SlugHold
 from app.slugs import hold_slug, is_held_for_someone_else, stop_redirects_to
 from app.schemas import (
@@ -50,13 +50,16 @@ def require_user(request: Request, db: Session) -> User:
     return user
 
 
-def check_content(content: PortfolioContent, user: User) -> None:
+def validated_content(content: PortfolioContent, user: User, db: Session) -> dict:
     if content.template_id not in TEMPLATE_IDS:
         raise HTTPException(422, "Choose one of the available templates.")
-    images = [content.avatar, *(project.image for project in content.projects)]
-    if any(url and not owned_media_url(url, user.id) for url in images):
-        # Only images this server stored for this user may be shown, never arbitrary URLs.
-        raise HTTPException(422, "One of the images isnâ€™t valid. Please upload it again.")
+    document = content.model_dump(mode="json")
+    keys = {image_key(url, user.id) for url in image_urls(document) if url}
+    if None in keys or (keys and keys != set(db.scalars(
+        select(Upload.key).where(Upload.owner_id == user.id, Upload.key.in_(keys))
+    ))):
+        raise HTTPException(422, "One of the images isn’t valid. Please upload it again.")
+    return normalize_images(document, user.id)
 
 
 def check_new_address(db: Session, slug: str, user: User) -> None:
@@ -79,23 +82,26 @@ def owned_portfolio(db: Session, user: User, slug: str) -> Portfolio:
 
 
 def summarize(portfolio: Portfolio) -> dict:
+    draft = normalize_images(portfolio.draft_content, portfolio.owner_id)
+    published = portfolio.published_content
     return {
         "slug": portfolio.slug,
         "revision": portfolio.revision or 0,
         "template_id": portfolio.draft_content["template_id"],
         "name": portfolio.draft_content["name"],
         "published": portfolio.published_content is not None,
-        "has_unpublished_changes": portfolio.published_content != portfolio.draft_content,
+        "has_unpublished_changes": published is None or normalize_images(published, portfolio.owner_id) != draft,
         "published_at": portfolio.published_at,
         "updated_at": portfolio.updated_at,
     }
 
 
 def detail(portfolio: Portfolio) -> dict:
+    published = portfolio.published_content
     return {
         **summarize(portfolio),
-        "draft_content": portfolio.draft_content,
-        "published_content": portfolio.published_content,
+        "draft_content": normalize_images(portfolio.draft_content, portfolio.owner_id),
+        "published_content": normalize_images(published, portfolio.owner_id) if published is not None else None,
     }
 
 
@@ -113,7 +119,7 @@ def create_portfolio(body: PortfolioCreate, request: Request, db: Database):
     user = require_user(request, db)
     throttle(db, "create", str(user.id), 30, 3600)
     db.commit()
-    check_content(body.draft_content, user)
+    document = validated_content(body.draft_content, user, db)
     check_new_address(db, body.slug, user)
 
     # Lock the owner's row so two quick requests cannot both slip past the limit.
@@ -123,7 +129,7 @@ def create_portfolio(body: PortfolioCreate, request: Request, db: Database):
         raise HTTPException(409, f"You can have up to {MAX_PORTFOLIOS} portfolios.")
 
     portfolio = Portfolio(
-        owner_id=user.id, slug=body.slug, draft_content=body.draft_content.model_dump(mode="json"),
+        owner_id=user.id, slug=body.slug, draft_content=document,
     )
     db.add(portfolio)
     try:
@@ -148,7 +154,7 @@ def update_portfolio(
     portfolio = owned_portfolio(db, user, slug)
     throttle(db, "save", str(user.id), 600, 3600)
     db.commit()
-    check_content(body.draft_content, user)
+    document = validated_content(body.draft_content, user, db)
 
     # The save only goes through if nobody else saved since this edit began. The check and the
     # write are one statement, so two simultaneous saves can't both win.
@@ -161,7 +167,7 @@ def update_portfolio(
     saved = db.execute(
         update(Portfolio)
         .where(Portfolio.id == portfolio.id, func.coalesce(Portfolio.revision, 0) == current)
-        .values(draft_content=body.draft_content.model_dump(mode="json"), revision=current + 1)
+        .values(draft_content=document, revision=current + 1)
     )
     if saved.rowcount == 0:
         db.rollback()
@@ -209,7 +215,7 @@ def publish_portfolio(slug: str, request: Request, db: Database, background: Bac
     throttle(db, "publish", str(user.id), 60, 3600)
     db.commit()
     first_time = portfolio.published_at is None
-    portfolio.published_content = dict(portfolio.draft_content)
+    portfolio.published_content = normalize_images(portfolio.draft_content, portfolio.owner_id)
     portfolio.published_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(portfolio)
@@ -283,5 +289,8 @@ def public_portfolio(slug: str, db: Database):
     portfolio = db.scalar(select(Portfolio).where(Portfolio.slug == slug))
     if portfolio is None or portfolio.published_content is None:
         raise HTTPException(404, "Portfolio not found.")
-    return portfolio
-
+    return {
+        "slug": portfolio.slug,
+        "published_at": portfolio.published_at,
+        "published_content": normalize_images(portfolio.published_content, portfolio.owner_id),
+    }
