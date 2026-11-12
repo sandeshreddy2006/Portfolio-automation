@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { templateInfo } from "@/components/templates/meta";
 import Brand from "./brand";
+import CookieControls from "./cookie-controls";
 import AccountNavigation from "./auth/account-menu";
+import { HomeNavigation, HomeSectionLink } from "./home-navigation";
 
 const workflow = [
   {
@@ -11,7 +13,7 @@ const workflow = [
   },
   {
     title: "Make it yours",
-    description: "Add your bio, projects, and links. Preview how they look together.",
+    description: "Import a résumé or add your bio, projects, and links by hand.",
   },
   {
     title: "Publish your site",
@@ -19,7 +21,7 @@ const workflow = [
   },
   {
     title: "Share it anywhere",
-    description: "Get the link on screen and by email. Keep the same URL when you update your work.",
+    description: "Share your link on applications, profiles, and anywhere people can find your work.",
   },
 ];
 
@@ -28,16 +30,16 @@ const icons = {
   photo: "M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M9 9.5h.01",
   link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
   lock: "M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3",
-  sparkle: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18 16l.8 2.2L21 19l-2.2.8L18 22l-.8-2.2L15 19l2.2-.8z",
+  file: "M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6",
   layers: "M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5",
 } as const;
 
 const features: { icon: keyof typeof icons; title: string; description: string }[] = [
   { icon: "preview", title: "See it as you build it", description: "A live preview updates as you type, on desktop, tablet and phone sizes." },
-  { icon: "photo", title: "Your face, your work", description: "Add a profile photo and an image for each project. We shrink and clean them for you." },
-  { icon: "link", title: "A link that lasts", description: "Edit and republish any time and the link stays the same. Change it, and the old one still works." },
+  { icon: "photo", title: "Profile and project images", description: "Add a profile photo and give each project its own image." },
+  { icon: "link", title: "A link that lasts", description: "Republish updates at the same address. If you rename it, your previous link redirects for 30 days." },
   { icon: "lock", title: "Private until you say so", description: "Drafts stay private. Search engines are asked to skip your page unless you choose otherwise." },
-  { icon: "sparkle", title: "Help with the words", description: "Stuck on your bio? Ask for a suggestion, then keep it, change it or ignore it." },
+  { icon: "file", title: "Résumé import", description: "Start with a PDF and review suggested details before adding them to your draft." },
   { icon: "layers", title: "One for every goal", description: "Make up to five portfolios, such as one for design jobs and another for code." },
 ];
 
@@ -64,11 +66,11 @@ const questions = [
   },
 ];
 
-function Arrow({ diagonal = false }: { diagonal?: boolean }) {
+function Arrow() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" width="18" height="18">
       <path
-        d={diagonal ? "M6 18 18 6M7 6h11v11" : "M4 12h15m-6-6 6 6-6 6"}
+        d="M4 12h15m-6-6 6 6-6 6"
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
@@ -82,8 +84,7 @@ function PortfolioPreview() {
   return (
     <figure className="preview">
       <figcaption className="preview-caption">
-        <span>01 / Example portfolio</span>
-        <span className="preview-mode"><i aria-hidden="true" /> Concept preview</span>
+        <span>Example portfolio</span>
       </figcaption>
       <div className="preview-stage" aria-hidden="true">
         <div className="preview-orbit preview-orbit-outer" />
@@ -95,7 +96,7 @@ function PortfolioPreview() {
             <span className="window-arrow">↗</span>
           </div>
           <div className="sample">
-            <div className="sample-top"><span>Alex Morgan</span><span>Work / 01</span></div>
+            <div className="sample-top"><span>Alex Morgan</span><span>Work</span></div>
             <div className="sample-copy">
               <span>Designer &amp; developer</span>
               <strong>Making digital<br />things feel human.</strong>
@@ -109,17 +110,16 @@ function PortfolioPreview() {
                     <stop offset="1" stopColor="#d8fa73" stopOpacity=".45" />
                   </linearGradient>
                 </defs>
-                <g stroke="url(#sample-line)" strokeWidth=".75" className="sample-wave">
+                <g stroke="url(#sample-line)" strokeWidth=".75">
                   {Array.from({ length: 13 }, (_, line) => (
                     <path key={line} d={`M-10 ${68 + line * 4} C 48 ${116 - line * 5}, 85 ${-45 + line * 7}, 156 ${35 + line * 3} S 234 ${112 - line * 4}, 312 ${14 + line * 8}`} />
                   ))}
                 </g>
               </svg>
-              <span>01 — Selected work</span>
+              <span>Selected work</span>
             </div>
           </div>
         </div>
-        <span className="preview-tag"><i /> Ready to share</span>
       </div>
     </figure>
   );
@@ -127,29 +127,25 @@ function PortfolioPreview() {
 
 export default function Home() {
   return (
-    <div id="top" className="landing">
-      <header className="site-header page-width">
-        <a className="brand-link" href="#top" aria-label="Portfolabs home">
-          <Brand compact />
-        </a>
-        <nav aria-label="Main navigation">
-          <a className="workflow-link" href="#designs">Designs</a>
-          <a className="workflow-link" href="#workflow">How it works</a>
-          <a className="workflow-link" href="#faq">FAQ</a>
-          <AccountNavigation />
-        </nav>
+    <div id="top" className="landing" tabIndex={-1}>
+      <header className="home-header">
+        <div className="site-header page-width">
+          <HomeSectionLink id="top" className="brand-link"><Brand compact /></HomeSectionLink>
+          <HomeNavigation />
+          <div className="home-account"><AccountNavigation /></div>
+        </div>
       </header>
 
       <main className="page-width">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow intro-label"><span aria-hidden="true" /> Portfolio builder · 6 designs</p>
+            <p className="eyebrow intro-label"><span aria-hidden="true" /> Portfolio website builder</p>
             <h1 id="hero-title">
-              <span className="headline-line"><span>Your work.</span></span>
-              <span className="headline-line"><span>Live on the web.</span></span>
+              A website for
+              <br />your best work.
             </h1>
             <p className="hero-description">
-              Pick a design, add your projects and story, and publish a portfolio you can share with anyone, in one sitting.
+              Choose a template, add your work or import your résumé, and publish a portfolio at your own shareable address.
             </p>
             <div className="hero-actions">
               <Link className="primary-link" href="/dashboard">Start building <Arrow /></Link>
@@ -159,11 +155,10 @@ export default function Home() {
           <PortfolioPreview />
         </section>
 
-        <section id="designs" className="section" aria-labelledby="designs-title">
+        <section id="designs" tabIndex={-1} className="section" aria-labelledby="designs-title">
           <div className="section-heading">
-            <p className="eyebrow"><span aria-hidden="true" /> The designs</p>
-            <h2 id="designs-title">Six looks. One that’s yours.</h2>
-            <p>From calm and editorial to loud and playful. Open any of them and try it with your own words.</p>
+            <h2 id="designs-title">Portfolio designs</h2>
+            <p>Explore six templates, from editorial to playful. Open any design to see a full preview.</p>
           </div>
           <ul className="design-grid">
             {templateInfo.map((template) => (
@@ -186,10 +181,9 @@ export default function Home() {
           </ul>
         </section>
 
-        <section className="section" aria-labelledby="features-title">
+        <section id="features" tabIndex={-1} className="section" aria-labelledby="features-title">
           <div className="section-heading">
-            <p className="eyebrow"><span aria-hidden="true" /> What you get</p>
-            <h2 id="features-title">Everything a portfolio needs. Nothing it doesn’t.</h2>
+            <h2 id="features-title">Tools to build and share your portfolio</h2>
           </div>
           <ul className="feature-grid">
             {features.map(({ icon, title, description }) => (
@@ -206,10 +200,9 @@ export default function Home() {
           </ul>
         </section>
 
-        <section id="workflow" className="workflow" aria-labelledby="workflow-title">
-          <div className="workflow-heading">
-            <p className="eyebrow"><span aria-hidden="true" /> The workflow</p>
-            <h2 id="workflow-title">From a template to a live link.</h2>
+        <section id="workflow" tabIndex={-1} className="section workflow" aria-labelledby="workflow-title">
+          <div className="section-heading">
+            <h2 id="workflow-title">How it works</h2>
           </div>
           <ol className="workflow-steps">
             {workflow.map(({ title, description }, index) => (
@@ -222,10 +215,23 @@ export default function Home() {
           </ol>
         </section>
 
-        <section id="faq" className="section faq" aria-labelledby="faq-title">
+        <section id="about" tabIndex={-1} className="section about" aria-labelledby="about-title">
           <div className="section-heading">
-            <p className="eyebrow"><span aria-hidden="true" /> Questions</p>
-            <h2 id="faq-title">Good to know.</h2>
+            <h2 id="about-title">About Portfolabs</h2>
+            <p>We built Portfolabs to make it easier to turn the projects you’ve already done into a website you can share. It’s for students, developers, designers, and anyone who wants a home for their work.</p>
+          </div>
+          <div className="about-team">
+            <h3>Developers</h3>
+            <ul>
+              <li><span aria-hidden="true">SP</span> Sandesh Reddy Patlolla</li>
+              <li><span aria-hidden="true">SN</span> Suhas Nethi</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="faq" tabIndex={-1} className="section faq" aria-labelledby="faq-title">
+          <div className="section-heading">
+            <h2 id="faq-title">Frequently asked questions</h2>
           </div>
           <div className="faq-list">
             {questions.map(({ question, answer }) => (
@@ -246,15 +252,26 @@ export default function Home() {
 
       <footer className="site-footer page-width">
         <div>
-          <Brand />
-          <p className="repository-detail">Build a portfolio you’re proud to share.</p>
+          <HomeSectionLink id="top" className="brand-link"><Brand /></HomeSectionLink>
+          <p className="repository-detail">Portfolio builder for your work.</p>
         </div>
-        <nav className="legal-links" aria-label="Legal">
-          <Link href="/templates">Templates</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/privacy">Privacy</Link>
+        <nav className="footer-links" aria-label="Footer navigation">
+          <div>
+            <h2>Product</h2>
+            <Link href="/templates">Templates</Link>
+            <HomeSectionLink id="workflow">How it works</HomeSectionLink>
+            <HomeSectionLink id="about">About</HomeSectionLink>
+          </div>
+          <div>
+            <h2>Resources</h2>
+            <HomeSectionLink id="faq">FAQ</HomeSectionLink>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/cookies">Cookie settings</Link>
+            <Link href="/terms">Terms</Link>
+          </div>
         </nav>
       </footer>
+      <CookieControls />
     </div>
   );
 }

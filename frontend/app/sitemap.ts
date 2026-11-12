@@ -8,6 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/templates`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${SITE_URL}/terms`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE_URL}/cookies`, changeFrequency: "yearly", priority: 0.2 },
     ...portfolios.map(({ slug, published_at }) => ({
       url: `${SITE_URL}/p/${slug}`,
       lastModified: new Date(published_at),

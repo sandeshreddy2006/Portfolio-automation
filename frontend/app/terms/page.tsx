@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "Terms of Service | Portfolabs", desc
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" updated="10 November 2026">
-      <p>By creating an account or using Portfolabs, you agree to these terms. If you don’t agree, please don’t use the service.</p>
+    <LegalPage current="/terms" title="Terms of Service" updated="12 November 2026">
+      <p>When you create a Portfolabs account, we ask you to agree to these Terms of Service. Our <Link href="/privacy">Privacy Policy</Link> explains how we handle your data, and our <Link href="/cookies">Cookie Policy</Link> explains how to manage cookies.</p>
 
       <h2>Your account</h2>
       <p>You must be 16 or older. Give us accurate details, keep your password safe, and tell us if you think someone else has used your account. You can have up to five portfolios.</p>

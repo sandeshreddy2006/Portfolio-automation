@@ -6,8 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { templateInfo } from "@/components/templates/meta";
 import { ApiError, portfolios } from "@/lib/api";
 import type { PortfolioContent, PortfolioDetail } from "@/lib/portfolio";
+import type { ResumeDetails } from "@/lib/resume";
 import AssistButton from "./assist-button";
 import ImageField from "./image-field";
+import ResumeImport from "./resume-import";
 import styles from "../../studio.module.css";
 
 type Load = "loading" | "ready" | "signedout" | "missing" | "error";
@@ -126,6 +128,26 @@ export default function Editor({ slug }: { slug: string }) {
   function update(patch: Partial<PortfolioContent>) {
     setContent((current) => (current ? { ...current, ...patch } : current));
     setNotice(null);
+  }
+
+  function applyResume({ projects, links, ...fields }: ResumeDetails) {
+    setContent((current) => {
+      if (!current) return current;
+      const projectTitles = new Set(current.projects.map(({ title }) => title.trim().toLowerCase()));
+      const linkUrls = new Set(current.links.map(({ url }) => url.trim().replace(/\/$/, "")));
+      const newProjects = projects.filter(({ title }) => {
+        const normalized = title.trim().toLowerCase();
+        if (projectTitles.has(normalized)) return false;
+        projectTitles.add(normalized);
+        return true;
+      });
+      return {
+        ...current, ...fields,
+        projects: [...current.projects, ...newProjects].slice(0, MAX_PROJECTS),
+        links: [...current.links, ...links.filter(({ url }) => !linkUrls.has(url.replace(/\/$/, "")))].slice(0, MAX_LINKS),
+      };
+    });
+    setNotice({ kind: "ok", text: "Résumé suggestions applied to your draft. Review the fields and save when ready." });
   }
 
   async function saveDraft(): Promise<PortfolioDetail | null> {
@@ -263,6 +285,7 @@ export default function Editor({ slug }: { slug: string }) {
               <a key={id} href={`#sec-${id}`}>{label}</a>
             ))}
           </nav>
+          <ResumeImport content={content} disabled={busy !== ""} onApply={applyResume} />
           <section id="sec-design" className={styles.group}>
             <h2>Design</h2>
             <div className={styles.templatePicker}>

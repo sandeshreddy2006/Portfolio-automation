@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import LegalPage, { CONTACT_EMAIL } from "../legal-page";
 
 export const metadata: Metadata = { title: "Privacy Policy | Portfolabs", description: "What Portfolabs collects, why, and the choices you have." };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="10 November 2026">
+    <LegalPage current="/privacy" title="Privacy Policy" updated="12 November 2026">
       <p>Portfolabs helps you build and publish a portfolio website. This page explains what we collect, why, and the choices you have. We keep it short and plain on purpose.</p>
 
       <h2>What we collect</h2>
@@ -34,7 +35,7 @@ export default function PrivacyPage() {
       <p>We use trusted providers to host and operate Portfolabs: Vercel (website hosting), Railway (server and database), Cloudflare (image storage), our email provider, and Google (sign-in, if you choose it, and the writing assistant). They process data only to provide their service to us.</p>
 
       <h2>Cookies</h2>
-      <p>We use only the cookies needed to keep you signed in and to complete sign-in safely. We don’t use advertising or tracking cookies.</p>
+      <p>We ask before setting the essential cookies that keep you signed in and help verify your account. You can browse without cookies and change your choice on the <Link href="/cookies">Cookie Policy</Link> page.</p>
 
       <h2>Your choices</h2>
       <ul>

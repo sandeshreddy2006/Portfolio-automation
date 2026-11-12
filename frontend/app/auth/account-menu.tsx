@@ -34,6 +34,7 @@ export function AccountMenu({ googleConnected }: { googleConnected: boolean }) {
       <div className="account-menu-items">
         <Link href="/dashboard">My portfolios</Link>
         <Link href="/auth">View profile</Link>
+        <Link href="/cookies">Cookie settings</Link>
         {googleConnected ? (
           <span className="account-menu-connected">Google connected</span>
         ) : (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { AccountMenu, useAccount } from "./account-menu";
 import ResendCode from "./resend-code";
+import CookieControls, { useCookiePreference } from "../cookie-controls";
 
 type Step = "login" | "register" | "verify" | "link" | "password" | "delete" | "delete-confirm";
 const minimumPasswordLength = 8;
@@ -80,6 +81,7 @@ const steps = {
 };
 
 function googleMessage(error?: string) {
+  if (error === "cookies") return "Allow essential cookies before continuing with Google.";
   if (error === "google-config") return "Google sign-in hasn’t been configured yet.";
   if (error === "email") return "We couldn’t send a verification code. Please wait before trying again.";
   if (error === "unavailable") return "The account service is temporarily unavailable.";
@@ -92,6 +94,7 @@ function googleMessage(error?: string) {
 export default function AuthForm({ initialStep, googleError, deleted }: {
   initialStep: Step; googleError?: string; deleted: boolean;
 }) {
+  const cookiesAllowed = useCookiePreference() === "allowed";
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(googleMessage(googleError));
   const [strength, setStrength] = useState(0);
@@ -150,6 +153,7 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
         <dl className="profile-details">
           <div><dt>Name</dt><dd>{showingProfile.name}</dd></div>
           <div><dt>Email</dt><dd>{showingProfile.email}</dd></div>
+          <div><dt>Privacy</dt><dd><Link className="account-text-link" href="/cookies">Cookie settings</Link></dd></div>
           <div><dt>Google sign-in</dt><dd>{showingProfile.google_connected ? "Connected" : "Not connected"}</dd></div>
         </dl>
         <form className="account-form" method="post" onSubmit={submit}>
@@ -165,10 +169,11 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
       {verifyingEmail && <VerificationEnvelope key={resendCount} />}
       <h1>{title}</h1>
       <p className="account-description">{description}</p>
+      <CookieControls forAccount />
       {deleted && initialStep === "login" && <p className="account-success" role="status">Your Portfolabs account has been deleted.</p>}
       {entry && (
         <form action="/api/auth/google/start" method="get">
-          <button className="account-google" type="submit">
+          <button className="account-google" type="submit" disabled={!cookiesAllowed}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48">
               <path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.7-.4-4H24v7.7h11a9.4 9.4 0 0 1-4.1 6.2v5h6.6c3.9-3.6 6.1-8.8 6.1-14.9Z"/>
               <path fill="#34A853" d="M24 44c5.5 0 10.2-1.8 13.5-4.6l-6.6-5A12 12 0 0 1 12.8 28H6v5.2A20 20 0 0 0 24 44Z"/>
@@ -223,19 +228,22 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
             <input key={resendCount} name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required />
           </label>
         )}
+        {creatingPassword && (
+          <label className="account-terms">
+            <input name="termsAccepted" type="checkbox" value="yes" required />
+            <span>I agree to the <Link href="/terms">Terms of Service</Link> and acknowledge the <Link href="/privacy">Privacy Policy</Link>.</span>
+          </label>
+        )}
         {message && <p className="account-error" role="alert">{message}</p>}
-        <button className={deleting ? "primary-link account-delete-button" : "primary-link"} disabled={busy} type="submit">
+        <button className={deleting ? "primary-link account-delete-button" : "primary-link"} disabled={busy || !cookiesAllowed} type="submit">
           {busy ? "Please wait…" : action}
         </button>
       </form>
-      {verifyingEmail && (
+      {verifyingEmail && cookiesAllowed && (
         <ResendCode onResent={() => {
           setResendCount((count) => count + 1);
           setMessage("");
         }} />
-      )}
-      {initialStep === "register" && (
-        <p className="account-switch">By creating an account you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</p>
       )}
       {initialStep === "login" ? (
         <p className="account-switch">New to Portfolabs? <Link href="/auth?step=register">Create an account</Link></p>
