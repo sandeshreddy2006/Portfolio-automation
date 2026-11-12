@@ -1,29 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { AuthLink } from "./auth-dialog";
+import { useAccount } from "./use-account";
 
-type Account = { name: string; email: string; google_connected: boolean };
-
-export function useAccount(enabled = true) {
-  const [account, setAccount] = useState<Account | null>();
-
-  useEffect(() => {
-    if (!enabled) return;
-    const controller = new AbortController();
-    fetch("/api/auth/session", { cache: "no-store", signal: controller.signal })
-      .then((response) => response.ok ? response.json() : null)
-      .then(setAccount)
-      .catch(() => {
-        if (!controller.signal.aborted) setAccount(null);
-      });
-    return () => controller.abort();
-  }, [enabled]);
-
-  return account;
-}
-
-export function AccountMenu({ googleConnected }: { googleConnected: boolean }) {
+export function AccountMenu() {
   return (
     <details className="account-menu">
       <summary aria-label="Account menu">
@@ -33,17 +14,9 @@ export function AccountMenu({ googleConnected }: { googleConnected: boolean }) {
       </summary>
       <div className="account-menu-items">
         <Link href="/dashboard">My portfolios</Link>
-        <Link href="/auth">View profile</Link>
+        <Link href="/profile">View profile</Link>
         <Link href="/cookies">Cookie settings</Link>
-        {googleConnected ? (
-          <span className="account-menu-connected">Google connected</span>
-        ) : (
-          <form action="/api/auth/google/start" method="get">
-            <input type="hidden" name="intent" value="link" />
-            <button type="submit">Connect Google</button>
-          </form>
-        )}
-        <Link className="account-menu-danger" href="/auth?step=delete">Delete account</Link>
+        <AuthLink className="account-menu-danger" step="delete">Delete account</AuthLink>
       </div>
     </details>
   );
@@ -52,6 +25,6 @@ export function AccountMenu({ googleConnected }: { googleConnected: boolean }) {
 export default function AccountNavigation() {
   const account = useAccount();
   return account
-    ? <AccountMenu googleConnected={account.google_connected} />
-    : <Link className="sign-in-link" href="/auth">Sign in</Link>;
+    ? <AccountMenu />
+    : <AuthLink className="sign-in-link">Sign in</AuthLink>;
 }

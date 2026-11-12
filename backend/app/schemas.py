@@ -17,24 +17,62 @@ class PortfolioLink(BaseModel):
     url: HttpUrl
 
 
+class ImageFraming(BaseModel):
+    x: float = Field(default=50, ge=0, le=100)
+    y: float = Field(default=50, ge=0, le=100)
+    zoom: float = Field(default=1, ge=1, le=3)
+    filter: Literal["original", "monochrome", "warm", "cool", "vivid"] = "original"
+
+
 class PortfolioProject(BaseModel):
     title: Title
     description: str = Field(default="", max_length=4000)
     url: HttpUrl | None = None
     # URL of an image uploaded through /api/uploads; checked against the owner in portfolios.py.
     image: str | None = Field(default=None, max_length=300)
+    image_framing: ImageFraming | None = None
 
 
-class PortfolioContent(BaseModel):
-    template_id: Slug
+class PortfolioExperience(BaseModel):
+    role: Title
+    company: str = Field(default="", max_length=120)
+    dates: str = Field(default="", max_length=100)
+    description: str = Field(default="", max_length=4000)
+
+
+class PortfolioCredential(BaseModel):
+    title: Title
+    issuer: str = Field(default="", max_length=120)
+    date: str = Field(default="", max_length=100)
+    url: HttpUrl | None = None
+
+
+class ProfileContent(BaseModel):
     name: Title
     avatar: str | None = Field(default=None, max_length=300)
-    # Off by default: a portfolio is reachable by its link, not by search engines, unless the owner opts in.
-    search_visible: bool = False
+    avatar_framing: ImageFraming | None = None
     headline: str = Field(default="", max_length=160)
     bio: str = Field(default="", max_length=4000)
     projects: list[PortfolioProject] = Field(default_factory=list, max_length=30)
+    experience: list[PortfolioExperience] = Field(default_factory=list, max_length=30)
+    credentials: list[PortfolioCredential] = Field(default_factory=list, max_length=30)
     links: list[PortfolioLink] = Field(default_factory=list, max_length=20)
+
+
+ResumeId = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{32}$")]
+
+
+class ProfileDetails(BaseModel):
+    content: ProfileContent
+    email: EmailStr
+    google_connected: bool
+    resume_id: ResumeId | None = None
+
+
+class PortfolioContent(ProfileContent):
+    template_id: Slug
+    search_visible: bool = False
+    resume_id: ResumeId | None = None
 
 
 class PortfolioCreate(BaseModel):

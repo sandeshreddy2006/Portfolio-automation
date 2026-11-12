@@ -1,3 +1,4 @@
+import { CareerSections } from "./career-sections";
 import { Space_Grotesk, Space_Mono } from "next/font/google";
 import { displayHost, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
 import { UserImage } from "./user-image";
@@ -14,7 +15,7 @@ export function Brutalist({ content }: { content: PortfolioContent }) {
     <div className={`${styles.root} ${display.variable} ${mono.variable}`}>
       <main className={styles.wrap}>
         <header className={styles.hero}>
-          <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
+          <UserImage src={avatar} framing={content.avatar_framing} alt={`Photo of ${name}`} className={styles.avatar} priority />
           <p className={styles.tag}>Portfolio</p>
           <h1>{name}</h1>
           {headline && <p className={styles.headline}>{headline}</p>}
@@ -39,7 +40,7 @@ export function Brutalist({ content }: { content: PortfolioContent }) {
                 return (
                   <article key={index} className={styles.card}>
                     <span className={styles.num}>{String(index + 1).padStart(2, "0")}</span>
-                    <UserImage src={project.image} alt="" className={styles.cover} />
+                    <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
                     <h3>{project.title}</h3>
                     {project.description && <p>{project.description}</p>}
                     {href && (
@@ -73,6 +74,7 @@ export function Brutalist({ content }: { content: PortfolioContent }) {
             </ul>
           </section>
         )}
+        <CareerSections experience={content.experience} credentials={content.credentials} />
       </main>
     </div>
   );

@@ -1,3 +1,4 @@
+import { CareerSections } from "./career-sections";
 import { Press_Start_2P, VT323 } from "next/font/google";
 import { displayHost, paragraphs, safeHref, safeImage, type PortfolioContent } from "@/lib/portfolio";
 import { UserImage } from "./user-image";
@@ -19,7 +20,7 @@ export function Blocky({ content }: { content: PortfolioContent }) {
       </div>
 
       <header className={styles.hero}>
-        <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
+        <UserImage src={avatar} framing={content.avatar_framing} alt={`Photo of ${name}`} className={styles.avatar} priority />
         <p className={styles.welcome}>Welcome to the world of</p>
         <h1>{name}</h1>
         {headline && <p className={styles.tooltip}>{headline}</p>}
@@ -45,7 +46,7 @@ export function Blocky({ content }: { content: PortfolioContent }) {
                   return (
                     <li key={index} className={styles.panel}>
                       {safeImage(project.image) ? (
-                        <UserImage src={project.image} alt="" className={styles.thumb} />
+                        <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.thumb} />
                       ) : (
                         <span className={`${styles.block} ${styles[`block${index % 6}`]}`} aria-hidden="true" />
                       )}
@@ -84,6 +85,7 @@ export function Blocky({ content }: { content: PortfolioContent }) {
               </ul>
             </section>
           )}
+          <CareerSections experience={content.experience} credentials={content.credentials} />
         </div>
       </main>
     </div>

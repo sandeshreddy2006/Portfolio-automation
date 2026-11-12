@@ -1,0 +1,13 @@
+.section {
+  grid-column: 1 / -1;
+  padding-block: 1.25rem;
+  border-top: 1px solid currentColor;
+  overflow-wrap: anywhere;
+}
+
+.section h2 { margin: 0 0 1rem; font-size: clamp(1.35rem, 3vw, 2rem); }
+.section ul { display: grid; gap: 1.25rem; margin: 0; padding: 0; list-style: none; }
+.section h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.section p { margin: .25rem 0 0; font-size: 1rem; line-height: 1.55; }
+.description { white-space: pre-line; }
+.section a { display: inline-block; margin-top: .35rem; text-decoration: underline; text-underline-offset: .2em; }

@@ -1,3 +1,4 @@
+import { CareerSections } from "./career-sections";
 import { JetBrains_Mono } from "next/font/google";
 import { displayHost, paragraphs, safeHref, slugify, type PortfolioContent } from "@/lib/portfolio";
 import { UserImage } from "./user-image";
@@ -29,7 +30,7 @@ export function Terminal({ content }: { content: PortfolioContent }) {
 
         <main className={styles.body}>
           <Prompt command="whoami" />
-          <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
+          <UserImage src={avatar} framing={content.avatar_framing} alt={`Photo of ${name}`} className={styles.avatar} priority />
           <h1>{name}</h1>
           {headline && <p className={styles.headline}>{headline}</p>}
 
@@ -60,7 +61,7 @@ export function Terminal({ content }: { content: PortfolioContent }) {
                           )}
                         </h2>
                         {project.description && <p>{project.description}</p>}
-                        <UserImage src={project.image} alt="" className={styles.thumb} />
+                        <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.thumb} />
                         {href && <small>{displayHost(href)}</small>}
                       </div>
                     </li>
@@ -90,6 +91,7 @@ export function Terminal({ content }: { content: PortfolioContent }) {
             </section>
           )}
 
+          <CareerSections experience={content.experience} credentials={content.credentials} />
           <Prompt />
         </main>
       </div>

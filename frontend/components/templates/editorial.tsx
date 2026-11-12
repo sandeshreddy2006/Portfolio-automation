@@ -1,3 +1,4 @@
+import { CareerSections } from "./career-sections";
 import { Fraunces, Inter } from "next/font/google";
 import { displayHost, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
 import { UserImage } from "./user-image";
@@ -19,7 +20,7 @@ export function Editorial({ content }: { content: PortfolioContent }) {
 
       <main>
         <section className={styles.hero}>
-          <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.avatar} priority />
+          <UserImage src={avatar} framing={content.avatar_framing} alt={`Photo of ${name}`} className={styles.avatar} priority />
           <h1>{name}</h1>
           {headline && <p className={styles.lede}>{headline}</p>}
         </section>
@@ -45,7 +46,7 @@ export function Editorial({ content }: { content: PortfolioContent }) {
                   <li key={index}>
                     <span className={styles.number}>{String(index + 1).padStart(2, "0")}</span>
                     <div>
-                      <UserImage src={project.image} alt="" className={styles.cover} />
+                      <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
                       <h3>{project.title}</h3>
                       {project.description && <p>{project.description}</p>}
                       {href && (
@@ -60,6 +61,7 @@ export function Editorial({ content }: { content: PortfolioContent }) {
             </ol>
           </section>
         )}
+        <CareerSections experience={content.experience} credentials={content.credentials} />
       </main>
 
       {links.length > 0 && (

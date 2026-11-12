@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { AuthLink } from "../auth/auth-dialog";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { templateInfo } from "@/components/templates/meta";
-import { ApiError, portfolios } from "@/lib/api";
-import { MAX_PORTFOLIOS, type PortfolioSummary } from "@/lib/portfolio";
+import { ApiError, portfolios, profile } from "@/lib/api";
+import { MAX_PORTFOLIOS, type PortfolioSummary, type ProfileContent } from "@/lib/portfolio";
+import { fillUsingProfile } from "@/lib/profile";
 import styles from "../studio.module.css";
 
 type State = "loading" | "signedout" | "ready" | "error";
@@ -45,6 +47,9 @@ export default function Dashboard() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
+  const [profileContent, setProfileContent] = useState<ProfileContent>();
+  const [useProfile, setUseProfile] = useState(false);
+  const [useProfilePhoto, setUseProfilePhoto] = useState(false);
   const [templateId, setTemplateId] = useState(wantedTemplate ?? templateInfo[0].id);
 
   useEffect(() => {
@@ -59,6 +64,13 @@ export default function Dashboard() {
     );
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (state !== "ready" || !creating) return;
+    let active = true;
+    profile.get().then(({ content }) => { if (active) setProfileContent(content); }).catch(() => {});
+    return () => { active = false; };
+  }, [state, creating]);
 
   const full = items.length >= MAX_PORTFOLIOS;
 
@@ -77,9 +89,10 @@ export default function Dashboard() {
     setBusy(true);
     setMessage("");
     try {
-      await portfolios.create(slug, {
-        template_id: templateId, name: name.trim(), headline: "", bio: "", projects: [], links: [],
-      });
+      const initial = { template_id: templateId, name: name.trim(), headline: "", bio: "", projects: [], links: [] };
+      const content = useProfile && profileContent ? fillUsingProfile(initial, profileContent, useProfilePhoto)
+        : useProfilePhoto && profileContent ? { ...initial, avatar: profileContent.avatar, avatar_framing: profileContent.avatar_framing } : initial;
+      await portfolios.create(slug, content);
       router.push(`/editor/${slug}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Something went wrong.");
@@ -105,7 +118,7 @@ export default function Dashboard() {
       <main className={`page-width ${styles.page}`}>
         <h1 className={styles.title}>Sign in to build your portfolio.</h1>
         <p className={styles.lead}>Your portfolios are saved to your account, so you can edit and republish them at the same link.</p>
-        <Link className="primary-link" href="/auth">Sign in or create an account</Link>
+        <AuthLink className="primary-link" destination={wantedTemplate ? `/dashboard?template=${wantedTemplate}` : "/dashboard"}>Sign in or create an account</AuthLink>
       </main>
     );
   }
@@ -147,6 +160,22 @@ export default function Dashboard() {
             </label>
           </div>
 
+          {profileContent && (
+            <>
+              <label className={styles.profileCheck}><input type="checkbox" checked={useProfile} onChange={(event) => {
+                const checked = event.target.checked;
+                setUseProfile(checked);
+                if (checked && !name.trim()) {
+                  setName(profileContent.name);
+                  if (!slugEdited) setSlug(toSlug(profileContent.name));
+                }
+              }} /> Fill using profile</label>
+              {profileContent.avatar && (
+                <label className={styles.profileCheck}><input type="checkbox" checked={useProfilePhoto}
+                  onChange={(event) => setUseProfilePhoto(event.target.checked)} /> Use my profile photo</label>
+              )}
+            </>
+          )}
           <fieldset className={styles.templates}>
             <legend>Choose a design (you can change it later)</legend>
             {templateInfo.map((template) => (

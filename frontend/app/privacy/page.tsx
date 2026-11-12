@@ -17,6 +17,9 @@ export default function PrivacyPage() {
         <li><strong>Reports:</strong> if someone reports a portfolio, we keep the report and any contact email they choose to give us.</li>
       </ul>
 
+      <h2>Profile and résumé</h2>
+      <p>Details and photos saved to your profile are private until you add them to a published portfolio. If you upload a PDF to your profile, we store it privately. You can enable downloads for each published portfolio. Anyone with that portfolio link can then download the PDF, so review it for personal information before sharing. Removing or replacing the stored PDF disables its download links.</p>
+
       <h2>What is public</h2>
       <p>A portfolio you publish is public to anyone with its link. By default, search engines are asked <em>not</em> to list it. You can allow search engines in the editor at any time. Drafts are never public. Anything you put in a published portfolio, including images, can be seen and copied by visitors, so don’t include anything you want to keep private.</p>
 

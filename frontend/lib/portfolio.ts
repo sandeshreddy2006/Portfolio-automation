@@ -2,24 +2,40 @@
 
 export type PortfolioLink = { label: string; url: string };
 
+export type ImageFilter = "original" | "monochrome" | "warm" | "cool" | "vivid";
+export type ImageFraming = { x: number; y: number; zoom: number; filter: ImageFilter };
+
 export type PortfolioProject = {
   title: string;
   description: string;
   url?: string | null;
   /** URL of an image uploaded through /api/uploads. */
   image?: string | null;
+  image_framing?: ImageFraming | null;
 };
 
-export type PortfolioContent = {
-  template_id: string;
+export type PortfolioExperience = { role: string; company: string; dates: string; description: string };
+export type PortfolioCredential = { title: string; issuer: string; date: string; url?: string | null };
+
+export type ProfileContent = {
   name: string;
   avatar?: string | null;
-  /** Whether search engines may list the public page. Off unless the owner opts in. */
-  search_visible?: boolean;
+  avatar_framing?: ImageFraming | null;
   headline: string;
   bio: string;
   projects: PortfolioProject[];
   links: PortfolioLink[];
+  experience?: PortfolioExperience[];
+  credentials?: PortfolioCredential[];
+};
+
+export type ProfileDetails = { content: ProfileContent; email: string; google_connected: boolean; resume_id: string | null };
+
+export type PortfolioContent = ProfileContent & {
+  template_id: string;
+  /** Whether search engines may list the public page. Off unless the owner opts in. */
+  search_visible?: boolean;
+  resume_id?: string | null;
 };
 
 // Mirrors PortfolioSummary / PortfolioDetail in backend/app/schemas.py.
@@ -41,6 +57,7 @@ export type PortfolioDetail = PortfolioSummary & {
 };
 
 export const MAX_PORTFOLIOS = 5;
+export const MAX_RESUME_ENTRIES = 30;
 
 /** Only http(s) URLs may reach an href. Anything else renders as plain text. */
 export function safeHref(url?: string | null): string | undefined {

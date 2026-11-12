@@ -46,6 +46,8 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(254), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    profile_content: Mapped[dict[str, Any] | None] = mapped_column(PORTFOLIO_DOCUMENT)
+    resume_id: Mapped[str | None] = mapped_column(String(32))
     google_subject: Mapped[str | None] = mapped_column(String(255), unique=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -57,7 +59,7 @@ class User(Base):
 
 
 class Upload(Base):
-    """An image stored for a user, kept for quota limits and cleanup."""
+    """An image or résumé stored for a user, kept for quota limits and cleanup."""
 
     __tablename__ = "uploads"
 
@@ -107,6 +109,8 @@ class AuthChallenge(Base):
     purpose: Mapped[str] = mapped_column(String(24))
     name: Mapped[str] = mapped_column(String(120))
     password_hash: Mapped[str | None] = mapped_column(String(255))
+    profile_content: Mapped[dict[str, Any] | None] = mapped_column(PORTFOLIO_DOCUMENT)
+    resume_id: Mapped[str | None] = mapped_column(String(32))
     google_subject: Mapped[str | None] = mapped_column(String(255))
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     code_hash: Mapped[str | None] = mapped_column(String(64))

@@ -20,7 +20,7 @@ from app.auth_email import send_account_notice, send_verification_code
 from app.emailcheck import verify_email_domain
 from app.db import get_db
 from app.google_oauth import frontend_origin, google_authorization, google_config, google_identity
-from app.media import purge_user_media
+from app.media import lock_portfolio_media, purge_user_media
 from app.slugs import hold_user_slugs
 from app.models import AuthChallenge, AuthRateLimit, AuthSession, User
 from app.schemas import AccountDetails, GoogleIdentity, PasswordLogin, RegisterAccount, SetAccountPassword, VerifyAccountCode
@@ -402,6 +402,7 @@ def confirm_account_deletion(
     if user is None:
         raise HTTPException(401, "Sign in to delete your account.")
     verified_challenge(db, request, body.code, ("delete",), user.id)
+    lock_portfolio_media(db, user.id)
     email = user.email
     db.execute(delete(AuthChallenge).where(or_(AuthChallenge.email == email, AuthChallenge.user_id == user.id)))
     db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))

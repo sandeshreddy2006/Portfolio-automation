@@ -13,12 +13,13 @@ from app.auth import current_user, throttle
 from app.auth_email import send_portfolio_live
 from app.db import get_db
 from app.google_oauth import frontend_origin
-from app.media import cleanup_user_media, image_key, image_urls, normalize_images
+from app.media import cleanup_user_media, image_key, image_keys, image_urls, lock_portfolio_media, normalize_images
 from app.models import Portfolio, Upload, User
 from app.models import SlugHold
 from app.slugs import hold_slug, is_held_for_someone_else, stop_redirects_to
 from app.schemas import (
     PortfolioContent,
+    ProfileContent,
     PortfolioCreate,
     PortfolioDetail,
     PortfolioRename,
@@ -50,9 +51,7 @@ def require_user(request: Request, db: Session) -> User:
     return user
 
 
-def validated_content(content: PortfolioContent, user: User, db: Session) -> dict:
-    if content.template_id not in TEMPLATE_IDS:
-        raise HTTPException(422, "Choose one of the available templates.")
+def validated_profile(content: ProfileContent, user: User, db: Session) -> dict:
     document = content.model_dump(mode="json")
     keys = {image_key(url, user.id) for url in image_urls(document) if url}
     if None in keys or (keys and keys != set(db.scalars(
@@ -60,6 +59,15 @@ def validated_content(content: PortfolioContent, user: User, db: Session) -> dic
     ))):
         raise HTTPException(422, "One of the images isn’t valid. Please upload it again.")
     return normalize_images(document, user.id)
+
+
+def validated_content(content: PortfolioContent, user: User, db: Session) -> dict:
+    if content.template_id not in TEMPLATE_IDS:
+        raise HTTPException(422, "Choose one of the available templates.")
+    document = validated_profile(content, user, db)
+    if content.resume_id != user.resume_id:
+        document["resume_id"] = None
+    return document
 
 
 def check_new_address(db: Session, slug: str, user: User) -> None:
@@ -119,11 +127,11 @@ def create_portfolio(body: PortfolioCreate, request: Request, db: Database):
     user = require_user(request, db)
     throttle(db, "create", str(user.id), 30, 3600)
     db.commit()
+    lock_portfolio_media(db, user.id)
+    db.refresh(user)
     document = validated_content(body.draft_content, user, db)
     check_new_address(db, body.slug, user)
 
-    # Lock the owner's row so two quick requests cannot both slip past the limit.
-    db.scalar(select(User.id).where(User.id == user.id).with_for_update())
     count = db.scalar(select(func.count()).select_from(Portfolio).where(Portfolio.owner_id == user.id))
     if count >= MAX_PORTFOLIOS:
         raise HTTPException(409, f"You can have up to {MAX_PORTFOLIOS} portfolios.")
@@ -154,7 +162,10 @@ def update_portfolio(
     portfolio = owned_portfolio(db, user, slug)
     throttle(db, "save", str(user.id), 600, 3600)
     db.commit()
+    lock_portfolio_media(db, user.id)
+    db.refresh(user)
     document = validated_content(body.draft_content, user, db)
+    released = image_keys(user.id, portfolio.draft_content) - image_keys(user.id, document)
 
     # The save only goes through if nobody else saved since this edit began. The check and the
     # write are one statement, so two simultaneous saves can't both win.
@@ -174,7 +185,7 @@ def update_portfolio(
         raise conflict
     db.commit()
     db.refresh(portfolio)
-    background.add_task(cleanup_user_media, user.id)
+    background.add_task(cleanup_user_media, user.id, released=released)
     return detail(portfolio)
 
 
@@ -214,11 +225,18 @@ def publish_portfolio(slug: str, request: Request, db: Database, background: Bac
     portfolio = owned_portfolio(db, user, slug)
     throttle(db, "publish", str(user.id), 60, 3600)
     db.commit()
+    lock_portfolio_media(db, user.id)
+    db.refresh(user)
+    released = image_keys(user.id, portfolio.published_content) - image_keys(user.id, portfolio.draft_content)
     first_time = portfolio.published_at is None
-    portfolio.published_content = normalize_images(portfolio.draft_content, portfolio.owner_id)
+    published = normalize_images(portfolio.draft_content, portfolio.owner_id)
+    if published.get("resume_id") != user.resume_id:
+        published["resume_id"] = None
+    portfolio.published_content = published
     portfolio.published_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(portfolio)
+    background.add_task(cleanup_user_media, user.id, released=released)
 
     if first_time:
         try:
@@ -238,24 +256,28 @@ def publish_portfolio(slug: str, request: Request, db: Database, background: Bac
 @router.post("/portfolios/{slug}/unpublish", response_model=PortfolioDetail)
 def unpublish_portfolio(slug: str, request: Request, db: Database, background: BackgroundTasks):
     user = require_user(request, db)
+    lock_portfolio_media(db, user.id)
     portfolio = owned_portfolio(db, user, slug)
+    released = image_keys(user.id, portfolio.published_content)
     portfolio.published_content = None
     portfolio.published_at = None
     db.commit()
     db.refresh(portfolio)
-    background.add_task(cleanup_user_media, user.id)
+    background.add_task(cleanup_user_media, user.id, released=released)
     return detail(portfolio)
 
 
 @router.delete("/portfolios/{slug}", status_code=204)
 def delete_portfolio(slug: str, request: Request, db: Database, background: BackgroundTasks):
     user = require_user(request, db)
+    lock_portfolio_media(db, user.id)
     portfolio = owned_portfolio(db, user, slug)
+    released = image_keys(user.id, portfolio.draft_content, portfolio.published_content)
     stop_redirects_to(db, slug)
     hold_slug(db, slug, user.id)
     db.delete(portfolio)
     db.commit()
-    background.add_task(cleanup_user_media, user.id)
+    background.add_task(cleanup_user_media, user.id, released=released)
     return Response(status_code=204)
 
 
@@ -289,8 +311,13 @@ def public_portfolio(slug: str, db: Database):
     portfolio = db.scalar(select(Portfolio).where(Portfolio.slug == slug))
     if portfolio is None or portfolio.published_content is None:
         raise HTTPException(404, "Portfolio not found.")
+    published = normalize_images(portfolio.published_content, portfolio.owner_id)
+    if published.get("resume_id") and published["resume_id"] != db.scalar(
+        select(User.resume_id).where(User.id == portfolio.owner_id)
+    ):
+        published["resume_id"] = None
     return {
         "slug": portfolio.slug,
         "published_at": portfolio.published_at,
-        "published_content": normalize_images(portfolio.published_content, portfolio.owner_id),
+        "published_content": published,
     }

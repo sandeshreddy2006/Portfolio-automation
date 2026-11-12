@@ -41,6 +41,12 @@ async function Portfolio({ params }: { params: PageProps<"/p/[slug]">["params"] 
     <>
       <template.Component content={portfolio.published_content} />
       <footer className={styles.badge}>
+        {portfolio.published_content.resume_id && (
+          <>
+            <a href={`/p/${slug}/resume`} download="resume.pdf">Download résumé</a>
+            <span aria-hidden="true">·</span>
+          </>
+        )}
         <Link href="/">Made with Portfolabs</Link>
         <span aria-hidden="true">·</span>
         <Link href={`/report?slug=${slug}`} rel="nofollow">Report</Link>

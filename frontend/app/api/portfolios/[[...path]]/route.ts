@@ -4,7 +4,7 @@ import { backendUrl } from "@/lib/backend";
 import { authCookieHeader, authHeaders } from "../../auth/backend";
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const MAX_BODY = 256 * 1024;
+const MAX_BODY = 2 * 1024 * 1024;
 
 type Context = { params: Promise<{ path?: string[] }> };
 

@@ -1,58 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { AuthLink } from "../../auth/auth-dialog";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { templateInfo } from "@/components/templates/meta";
-import { ApiError, portfolios } from "@/lib/api";
-import type { PortfolioContent, PortfolioDetail } from "@/lib/portfolio";
+import { ApiError, portfolios, profile } from "@/lib/api";
+import { type PortfolioContent, type PortfolioDetail, type ProfileDetails } from "@/lib/portfolio";
 import type { ResumeDetails } from "@/lib/resume";
 import AssistButton from "./assist-button";
 import ImageField from "./image-field";
 import ResumeImport from "./resume-import";
+import PortfolioFields from "./portfolio-fields";
+import { applyResumeDetails, fillUsingProfile, prepareProfile } from "@/lib/profile";
 import styles from "../../studio.module.css";
 
 type Load = "loading" | "ready" | "signedout" | "missing" | "error";
 type Device = "desktop" | "tablet" | "mobile";
 type Notice = { kind: "ok" | "error"; text: string } | null;
-type Row = { title?: string; url?: string | null; description?: string; image?: string | null };
 
 const DEVICE_WIDTH: Record<Device, string> = { desktop: "100%", tablet: "768px", mobile: "390px" };
 // Set when subdomains are switched on (wildcard DNS), for example "portfolabs.com".
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
-const MAX_PROJECTS = 30;
-const MAX_LINKS = 20;
-
-function move<T>(list: T[], from: number, to: number) {
-  if (to < 0 || to >= list.length) return list;
-  const next = [...list];
-  next.splice(to, 0, next.splice(from, 1)[0]);
-  return next;
-}
-
-/** Drops fully blank rows and trims text. Returns an error if a row is half filled in. */
-function prepare(content: PortfolioContent): { value: PortfolioContent; error?: string } {
-  const projects: PortfolioContent["projects"] = [];
-  for (const [index, project] of content.projects.entries()) {
-    const title = project.title.trim();
-    const description = project.description.trim();
-    const url = (project.url ?? "").trim();
-    if (!title && !description && !url) continue;
-    if (!title) return { value: content, error: `Project ${index + 1} needs a title.` };
-    projects.push({ title, description, url: url || null, image: project.image || null });
-  }
-  const links: PortfolioContent["links"] = [];
-  for (const [index, link] of content.links.entries()) {
-    const label = link.label.trim();
-    const url = link.url.trim();
-    if (!label && !url) continue;
-    if (!label || !url) return { value: content, error: `Link ${index + 1} needs both a label and a web address.` };
-    links.push({ label, url });
-  }
-  return {
-    value: { ...content, avatar: content.avatar || null, search_visible: content.search_visible === true, name: content.name.trim(), headline: content.headline.trim(), bio: content.bio.trim(), projects, links },
-  };
-}
 
 /** What the preview shows while typing: unfinished rows are simply left out. */
 function forPreview(content: PortfolioContent): PortfolioContent {
@@ -60,6 +29,8 @@ function forPreview(content: PortfolioContent): PortfolioContent {
     ...content,
     name: content.name.trim() || "Your name",
     projects: content.projects.filter((project) => project.title.trim()),
+    experience: content.experience?.filter(({ role }) => role.trim()),
+    credentials: content.credentials?.filter(({ title }) => title.trim()),
     links: content.links.filter((link) => link.label.trim() && link.url.trim()),
   };
 }
@@ -77,6 +48,8 @@ export default function Editor({ slug }: { slug: string }) {
   const [frameReady, setFrameReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const [conflict, setConflict] = useState(false);
+  const [profileDetails, setProfileDetails] = useState<ProfileDetails>();
+  const [useProfilePhoto, setUseProfilePhoto] = useState(false);
   const [newAddress, setNewAddress] = useState(slug);
   const frame = useRef<HTMLIFrameElement>(null);
 
@@ -99,6 +72,17 @@ export default function Editor({ slug }: { slug: string }) {
     );
     return () => { cancelled = true; };
   }, [slug, adopt]);
+
+  useEffect(() => {
+    if (load !== "ready") return;
+    let active = true;
+    function fetchProfile() {
+      profile.get().then((result) => { if (active) setProfileDetails(result); }).catch(() => {});
+    }
+    fetchProfile();
+    window.addEventListener("focus", fetchProfile);
+    return () => { active = false; window.removeEventListener("focus", fetchProfile); };
+  }, [load]);
 
   const dirty = content !== null && JSON.stringify(content) !== saved;
 
@@ -130,29 +114,20 @@ export default function Editor({ slug }: { slug: string }) {
     setNotice(null);
   }
 
-  function applyResume({ projects, links, ...fields }: ResumeDetails) {
-    setContent((current) => {
-      if (!current) return current;
-      const projectTitles = new Set(current.projects.map(({ title }) => title.trim().toLowerCase()));
-      const linkUrls = new Set(current.links.map(({ url }) => url.trim().replace(/\/$/, "")));
-      const newProjects = projects.filter(({ title }) => {
-        const normalized = title.trim().toLowerCase();
-        if (projectTitles.has(normalized)) return false;
-        projectTitles.add(normalized);
-        return true;
-      });
-      return {
-        ...current, ...fields,
-        projects: [...current.projects, ...newProjects].slice(0, MAX_PROJECTS),
-        links: [...current.links, ...links.filter(({ url }) => !linkUrls.has(url.replace(/\/$/, "")))].slice(0, MAX_LINKS),
-      };
-    });
+  function applyResume(details: ResumeDetails) {
+    setContent((current) => current ? applyResumeDetails(current, details) : current);
     setNotice({ kind: "ok", text: "Résumé suggestions applied to your draft. Review the fields and save when ready." });
+  }
+
+  function fillFromProfile() {
+    if (!profileDetails) return;
+    setContent((current) => current ? fillUsingProfile(current, profileDetails.content, useProfilePhoto) : current);
+    setNotice({ kind: "ok", text: "Profile details added to the draft. Review them before saving." });
   }
 
   async function saveDraft(): Promise<PortfolioDetail | null> {
     if (!content || !detail) return null;
-    const { value, error } = prepare(content);
+    const { value, error } = prepareProfile(content);
     if (error) { setNotice({ kind: "error", text: error }); return null; }
     if (!value.name) { setNotice({ kind: "error", text: "Add your name first." }); return null; }
     const next = await portfolios.save(slug, value, detail.revision);
@@ -223,7 +198,7 @@ export default function Editor({ slug }: { slug: string }) {
     return (
       <main className={`page-width ${styles.page}`}>
         <h1 className={styles.title}>Sign in to edit.</h1>
-        <Link className="primary-link" href="/auth">Sign in</Link>
+        <AuthLink className="primary-link" destination={`/editor/${slug}`}>Sign in</AuthLink>
       </main>
     );
   }
@@ -281,10 +256,24 @@ export default function Editor({ slug }: { slug: string }) {
       <div className={styles.split}>
         <form className={styles.form} onSubmit={(event) => { event.preventDefault(); run("save"); }}>
           <nav className={styles.sectionNav} aria-label="Jump to a section">
-            {[["design", "Design"], ["about", "About you"], ["projects", "Projects"], ["links", "Links"], ["visibility", "Address"]].map(([id, label]) => (
+            {[["design", "Design"], ["about", "About you"], ["projects", "Projects"], ["experience", "Experience"], ["credentials", "Credentials"], ["links", "Links"], ["visibility", "Publish settings"]].map(([id, label]) => (
               <a key={id} href={`#sec-${id}`}>{label}</a>
             ))}
           </nav>
+          {profileDetails && (
+            <section className={styles.group}>
+              <h2>Use saved details</h2>
+              <p className={styles.hint}>Fill empty fields and add entries from your profile.</p>
+              {profileDetails.content.avatar && (
+                <label className={styles.profileCheck}><input type="checkbox" checked={useProfilePhoto}
+                  onChange={(event) => setUseProfilePhoto(event.target.checked)} /> Use my profile photo</label>
+              )}
+              <div className={styles.actions}>
+                <button type="button" className={styles.secondary} disabled={busy !== ""} onClick={fillFromProfile}>Fill using profile</button>
+                <Link className={styles.secondary} href="/profile" target="_blank" rel="noopener noreferrer">View profile</Link>
+              </div>
+            </section>
+          )}
           <ResumeImport content={content} disabled={busy !== ""} onApply={applyResume} />
           <section id="sec-design" className={styles.group}>
             <h2>Design</h2>
@@ -304,9 +293,9 @@ export default function Editor({ slug }: { slug: string }) {
 
           <section id="sec-about" className={styles.group}>
             <h2>About you</h2>
-            <ImageField label="Profile photo" kind="avatar" value={content.avatar}
-              hint="Optional. A clear, square-ish photo works best."
-              onChange={(url) => update({ avatar: url })} />
+            <ImageField label="Profile photo" kind="avatar" template={content.template_id} value={content.avatar}
+              framing={content.avatar_framing} disabled={busy !== ""}
+              onChange={(url, framing) => update({ avatar: url, avatar_framing: framing })} />
             <label>Name
               <input required maxLength={120} value={content.name} onChange={(event) => update({ name: event.target.value })} />
             </label>
@@ -327,72 +316,20 @@ export default function Editor({ slug }: { slug: string }) {
               onAccept={(text) => update({ bio: text })} />
           </section>
 
-          <section id="sec-projects" className={styles.group}>
-            <h2>Projects <span>({content.projects.length}/{MAX_PROJECTS})</span></h2>
-            <p className={styles.hint}>For each one: what did you build, what was your part, and what did you learn?</p>
-            {content.projects.map((project: Row, index) => (
-              <fieldset key={index} className={styles.row}>
-                <legend>Project {index + 1}</legend>
-                <label>Title
-                  <input maxLength={120} value={project.title ?? ""}
-                    onChange={(event) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, title: event.target.value } : item) })} />
-                </label>
-                <label>Description
-                  <textarea rows={4} maxLength={4000} value={project.description ?? ""}
-                    onChange={(event) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, description: event.target.value } : item) })} />
-                </label>
-                <AssistButton task="project" text={project.description ?? ""} name={content.name} title={project.title ?? ""}
-                  onAccept={(text) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, description: text } : item) })} />
-                <label>Link (optional)
-                  <input type="url" inputMode="url" placeholder="https://" value={project.url ?? ""}
-                    onChange={(event) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, url: event.target.value } : item) })} />
-                </label>
-                <ImageField label="Project image (optional)" kind="project" value={project.image}
-                  hint="A screenshot or cover image. Wide images look best."
-                  onChange={(url) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, image: url } : item) })} />
-                <div className={styles.rowActions}>
-                  <button type="button" aria-label={`Move project ${index + 1} up`} disabled={index === 0} onClick={() => update({ projects: move(content.projects, index, index - 1) })}>↑</button>
-                  <button type="button" aria-label={`Move project ${index + 1} down`} disabled={index === content.projects.length - 1} onClick={() => update({ projects: move(content.projects, index, index + 1) })}>↓</button>
-                  <button type="button" className={styles.danger} onClick={() => update({ projects: content.projects.filter((_, at) => at !== index) })}>Remove</button>
-                </div>
-              </fieldset>
-            ))}
-            <button type="button" className={styles.secondary} disabled={content.projects.length >= MAX_PROJECTS}
-              onClick={() => update({ projects: [...content.projects, { title: "", description: "", url: "", image: null }] })}>
-              Add a project
-            </button>
-          </section>
-
-          <section id="sec-links" className={styles.group}>
-            <h2>Links <span>({content.links.length}/{MAX_LINKS})</span></h2>
-            {content.links.map((link, index) => (
-              <fieldset key={index} className={styles.row}>
-                <legend>Link {index + 1}</legend>
-                <div className={styles.fieldRow}>
-                  <label>Label
-                    <input maxLength={120} value={link.label} placeholder="GitHub"
-                      onChange={(event) => update({ links: content.links.map((item, at) => at === index ? { ...item, label: event.target.value } : item) })} />
-                  </label>
-                  <label>Web address
-                    <input type="url" inputMode="url" placeholder="https://" value={link.url}
-                      onChange={(event) => update({ links: content.links.map((item, at) => at === index ? { ...item, url: event.target.value } : item) })} />
-                  </label>
-                </div>
-                <div className={styles.rowActions}>
-                  <button type="button" aria-label={`Move link ${index + 1} up`} disabled={index === 0} onClick={() => update({ links: move(content.links, index, index - 1) })}>↑</button>
-                  <button type="button" aria-label={`Move link ${index + 1} down`} disabled={index === content.links.length - 1} onClick={() => update({ links: move(content.links, index, index + 1) })}>↓</button>
-                  <button type="button" className={styles.danger} onClick={() => update({ links: content.links.filter((_, at) => at !== index) })}>Remove</button>
-                </div>
-              </fieldset>
-            ))}
-            <button type="button" className={styles.secondary} disabled={content.links.length >= MAX_LINKS}
-              onClick={() => update({ links: [...content.links, { label: "", url: "" }] })}>
-              Add a link
-            </button>
-          </section>
+          <PortfolioFields content={content} template={content.template_id} disabled={busy !== ""} update={update} />
 
           <section id="sec-visibility" className={styles.group}>
-            <h2>Address and visibility</h2>
+            <h2>Publish settings</h2>
+            {profileDetails?.resume_id ? (
+              <>
+                <label className={styles.profileCheck}>
+                  <input type="checkbox" disabled={busy !== ""} checked={content.resume_id === profileDetails.resume_id}
+                    onChange={(event) => update({ resume_id: event.target.checked ? profileDetails.resume_id : null })} />
+                  Let visitors download my résumé
+                </label>
+                <p className={styles.hint}>When you publish this change, anyone with this portfolio link can download your current PDF.</p>
+              </>
+            ) : <p className={styles.hint}>Upload a PDF in <Link className="account-text-link" href="/profile" target="_blank" rel="noopener noreferrer">your profile</Link> to offer a résumé download.</p>}
             <div className={styles.rename}>
               <label>Web address
                 <span className={styles.addressField}>

@@ -1,34 +1,18 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import Brand from "../brand";
-import AuthForm from "./auth-form";
-
-export const metadata: Metadata = {
-  title: "Your account | Portfolabs",
-  referrer: "no-referrer",
-};
 
 type Query = Record<string, string | string[] | undefined>;
 
-async function AccountFlow({ searchParams }: { searchParams: Promise<Query> }) {
-  const { step, error, status } = await searchParams;
-  const initialStep = step === "register" || step === "verify" || step === "link" ||
-    step === "password" || step === "delete" || step === "delete-confirm"
-    ? step : "login";
-
-  return <AuthForm key={initialStep} initialStep={initialStep} googleError={typeof error === "string" ? error : undefined} deleted={status === "deleted"} />;
+async function AccountRedirect({ searchParams }: { searchParams: Promise<Query> }) {
+  const { step, error, status, next } = await searchParams;
+  const query = new URLSearchParams({ auth: typeof step === "string" ? step : "login" });
+  if (typeof error === "string") query.set("error", error);
+  if (status === "deleted") query.set("status", status);
+  if (typeof next === "string") query.set("next", next);
+  return redirect(`/?${query}`);
 }
 
+
 export default function AccountPage({ searchParams }: { searchParams: Promise<Query> }) {
-  return (
-    <main className="account-page page-width">
-      <Link className="brand-link" href="/" aria-label="Portfolabs home"><Brand compact /></Link>
-      <section className="account-panel" aria-label="Your Portfolabs account">
-        <Suspense fallback={<p role="status">Loading your account…</p>}>
-          <AccountFlow searchParams={searchParams} />
-        </Suspense>
-      </section>
-    </main>
-  );
+  return <Suspense><AccountRedirect searchParams={searchParams} /></Suspense>;
 }

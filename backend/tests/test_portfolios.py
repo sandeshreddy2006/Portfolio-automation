@@ -196,3 +196,37 @@ def test_renaming_is_rate_limited(client):
     create(owner, "name-0")
     codes = [rename(owner, f"name-{n}", f"name-{n + 1}").status_code for n in range(11)]
     assert codes[:10] == [200] * 10 and codes[10] == 429
+
+
+def test_career_sections_and_project_link_publish_with_the_draft(client):
+    owner = login_as(make_user())
+    original = create(owner).json()
+    assert original["draft_content"]["experience"] == []
+    assert original["draft_content"]["credentials"] == []
+    owner.post("/api/portfolios/alex/publish")
+
+    additions = {
+        "experience": [{
+            "role": "Software Engineer", "company": "Example Labs",
+            "dates": "Jan 2024 – Present", "description": "Built a dashboard.",
+        }],
+        "credentials": [{
+            "title": "Cloud Certification", "issuer": "Example Academy",
+            "date": "2025", "url": "https://example.com/certificate",
+        }],
+        "projects": [{
+            "title": "Weather Desk", "description": "", "url": "https://example.com/weather",
+        }],
+    }
+    saved = owner.put("/api/portfolios/alex", json={
+        "base_revision": original["revision"], "draft_content": content(**additions),
+    })
+    assert saved.status_code == 200
+    assert saved.json()["draft_content"]["experience"] == additions["experience"]
+    assert client.get("/api/public/alex").json()["published_content"]["credentials"] == []
+
+    assert owner.post("/api/portfolios/alex/publish").status_code == 200
+    published = client.get("/api/public/alex").json()["published_content"]
+    assert published["experience"] == additions["experience"]
+    assert published["credentials"] == additions["credentials"]
+    assert published["projects"][0]["url"] == additions["projects"][0]["url"]

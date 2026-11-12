@@ -200,3 +200,76 @@ def test_deleting_an_account_removes_stored_images(client):
         media.purge_user_media(db, 1)
     assert not list(media.LOCAL_DIR.rglob("*.webp"))
 
+
+
+def test_deleting_portfolio_removes_new_r2_images_but_keeps_shared_and_unsaved_uploads(client, monkeypatch):
+    for name in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"):
+        monkeypatch.setenv(name, "example")
+    objects = {}
+    storage = Mock()
+    storage.put_object.side_effect = lambda **kwargs: objects.update({kwargs["Key"]: kwargs["Body"]})
+
+    def delete_objects(**kwargs):
+        for item in kwargs["Delete"]["Objects"]:
+            objects.pop(item["Key"], None)
+        return {}
+
+    storage.delete_objects.side_effect = delete_objects
+    monkeypatch.setattr(media, "r2_client", lambda: storage)
+    owner = login_as(make_user())
+    shared, live_only, draft_only, unsaved = [upload(owner, image_bytes()).json()["url"] for _ in range(4)]
+
+    def create(slug, avatar):
+        return owner.post("/api/portfolios", json={"slug": slug, "draft_content": content(avatar=avatar)})
+
+    assert create("other", shared).status_code == 201
+    assert create("alex", live_only).status_code == 201
+    assert owner.post("/api/portfolios/alex/publish").status_code == 200
+    assert owner.put("/api/portfolios/alex", json={
+        "draft_content": content(avatar=draft_only, projects=[{"title": "Shared", "image": shared}]),
+    }).status_code == 200
+    assert len(objects) == 4
+
+    assert owner.delete("/api/portfolios/alex").status_code == 204
+    assert set(objects) == {media.image_key(shared, 1), media.image_key(unsaved, 1)}
+    assert client.get("/api/public/alex").status_code == 404
+    assert owner.get(live_only).status_code == 404
+    assert owner.get(draft_only).status_code == 404
+
+
+def test_r2_partial_delete_failure_keeps_the_upload_record_for_retry(client, monkeypatch):
+    from app.models import Upload
+
+    owner = login_as(make_user())
+    image = upload(owner, image_bytes()).json()["url"]
+    key = media.image_key(image, 1)
+    assert owner.post("/api/portfolios", json={"slug": "alex", "draft_content": content(avatar=image)}).status_code == 201
+
+    for name in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"):
+        monkeypatch.setenv(name, "example")
+    storage = Mock()
+    storage.delete_objects.side_effect = [{"Errors": [{"Key": key, "Code": "AccessDenied"}]}, {}]
+    monkeypatch.setattr(media, "r2_client", lambda: storage)
+
+    assert owner.delete("/api/portfolios/alex").status_code == 204
+    with SessionLocal() as db:
+        assert db.scalar(select(Upload.key).where(Upload.key == key)) == key
+    media.cleanup_user_media(1, min_age_seconds=0)
+    with SessionLocal() as db:
+        assert db.scalar(select(Upload.key).where(Upload.key == key)) is None
+
+
+def test_image_framing_survives_publish_and_rejects_invalid_values(client):
+    owner = login_as(make_user())
+    image = upload(owner, image_bytes()).json()["url"]
+    framing = {"x": 18, "y": 67, "zoom": 1.5, "filter": "warm"}
+    document = content(avatar=image, avatar_framing=framing,
+                       projects=[{"title": "Example", "image": image, "image_framing": framing}])
+    assert owner.post("/api/portfolios", json={"slug": "alex", "draft_content": document}).status_code == 201
+    assert owner.post("/api/portfolios/alex/publish").status_code == 200
+    published = client.get("/api/public/alex").json()["published_content"]
+    assert published["avatar_framing"] == framing
+    assert published["projects"][0]["image_framing"] == framing
+
+    document["avatar_framing"] = {**framing, "zoom": 4}
+    assert owner.put("/api/portfolios/alex", json={"draft_content": document}).status_code == 422

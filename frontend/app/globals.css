@@ -525,3 +525,33 @@ article .cookie-panel { margin-top: 24px; }
     cursor: url("/brand/envelope-cursor.svg") 3 3, pointer;
   }
 }
+
+.auth-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(100% - 24px, 520px);
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fffef7;
+  color: var(--ink);
+  box-shadow: 0 22px 72px #19211b45;
+}
+.auth-dialog[open] { animation: auth-dialog-enter 260ms ease-out both; }
+.auth-dialog::backdrop { background: #19211b70; }
+@keyframes auth-dialog-enter { from { opacity: 0; transform: translateY(12px) scale(.99); } to { opacity: 1; transform: none; } }
+.auth-dialog-content { position: relative; padding: clamp(20px, 5vw, 38px); }
+.auth-dialog-content h1 { font-size: clamp(29px, 5vw, 40px); font-weight: 760; line-height: 1.06; letter-spacing: -.055em; }
+.auth-dialog-close { position: absolute; right: 14px; top: 14px; display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); cursor: pointer; font-size: 23px; }
+.auth-dialog-close:hover, .sign-in-link:hover { background: #e9efdc; }
+.auth-dialog-close:focus-visible { outline: 2px solid #3d6124; outline-offset: 3px; }
+.account-switch button, .account-text-link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.google-connected { width: fit-content; cursor: default; }
+.sign-in-link { transition: background-color 180ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  .auth-dialog[open] { animation: none; }
+  .sign-in-link { transition: none; }
+}

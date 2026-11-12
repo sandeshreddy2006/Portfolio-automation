@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthDialogProvider } from "./auth/auth-dialog";
 
 export const metadata: Metadata = {
   // Lets relative share-image and canonical URLs resolve to full addresses.
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><AuthDialogProvider>{children}</AuthDialogProvider></body>
     </html>
   );
 }

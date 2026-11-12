@@ -48,7 +48,7 @@ def serve_image(owner_folder: str, filename: str, request: Request, db: Database
     if not media.storage_available():
         raise missing
     try:
-        data = media.read_image(key)
+        data = media.read_media(key)
     except FileNotFoundError:
         raise missing
     except Exception as error:
@@ -57,19 +57,19 @@ def serve_image(owner_folder: str, filename: str, request: Request, db: Database
     return Response(data, media_type="image/webp", headers=MEDIA_HEADERS)
 
 
-async def read_body(request: Request) -> bytes:
+async def read_body(request: Request, label: str = "image") -> bytes:
     declared = request.headers.get("content-length")
     if declared and declared.isdigit() and int(declared) > media.MAX_UPLOAD_BYTES:
-        raise HTTPException(413, "That image is too large. Please choose one under 4 MB.")
+        raise HTTPException(413, f"That {label} is too large. Please choose one up to 4 MB.")
     chunks: list[bytes] = []
     total = 0
     async for chunk in request.stream():
         total += len(chunk)
         if total > media.MAX_UPLOAD_BYTES:
-            raise HTTPException(413, "That image is too large. Please choose one under 4 MB.")
+            raise HTTPException(413, f"That {label} is too large. Please choose one up to 4 MB.")
         chunks.append(chunk)
     if not total:
-        raise HTTPException(422, "No image was received.")
+        raise HTTPException(422, f"No {label} was received.")
     return b"".join(chunks)
 
 

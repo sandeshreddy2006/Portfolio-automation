@@ -1,5 +1,5 @@
 import { prepareImage, type ImageKind } from "./image";
-import type { PortfolioDetail, PortfolioSummary } from "./portfolio";
+import type { PortfolioDetail, PortfolioSummary, ProfileContent, ProfileDetails } from "./portfolio";
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -17,10 +17,10 @@ function describe(detail: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-async function call<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+async function call<T>(path: string, method = "GET", body?: unknown, base = "/api/portfolios"): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`/api/portfolios${path}`, {
+    response = await fetch(`${base}${path}`, {
       method,
       cache: "no-store",
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
@@ -60,4 +60,19 @@ export const portfolios = {
   publish: (slug: string) => call<PortfolioDetail>(`/${slug}/publish`, "POST"),
   unpublish: (slug: string) => call<PortfolioDetail>(`/${slug}/unpublish`, "POST"),
   remove: (slug: string) => call<void>(`/${slug}`, "DELETE"),
+};
+
+
+export const profile = {
+  get: () => call<ProfileDetails>("", "GET", undefined, "/api/profile"),
+  save: (content: ProfileContent) => call<ProfileDetails>("", "PUT", content, "/api/profile"),
+  removeResume: () => call<void>("/resume", "DELETE", undefined, "/api/profile"),
+  async uploadResume(file: File): Promise<string> {
+    const response = await fetch("/api/profile/resume", {
+      method: "POST", cache: "no-store", headers: { "Content-Type": "application/pdf" }, body: file,
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok) throw new ApiError(describe(result?.detail), response.status);
+    return result.resume_id as string;
+  },
 };

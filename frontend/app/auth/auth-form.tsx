@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { AccountMenu, useAccount } from "./account-menu";
+import { useAccount } from "./use-account";
+import GoogleButton from "./google-button";
 import ResendCode from "./resend-code";
 import CookieControls, { useCookiePreference } from "../cookie-controls";
 
-type Step = "login" | "register" | "verify" | "link" | "password" | "delete" | "delete-confirm";
+export type AuthStep = "login" | "register" | "verify" | "link" | "password" | "delete" | "delete-confirm";
 const minimumPasswordLength = 8;
 
 function passwordStrength(password: string) {
@@ -91,8 +92,8 @@ function googleMessage(error?: string) {
   return "";
 }
 
-export default function AuthForm({ initialStep, googleError, deleted }: {
-  initialStep: Step; googleError?: string; deleted: boolean;
+export default function AuthForm({ initialStep, googleError, deleted, destination, onStep }: {
+  initialStep: AuthStep; googleError?: string; deleted: boolean; destination: string; onStep: (step: AuthStep) => void;
 }) {
   const cookiesAllowed = useCookiePreference() === "allowed";
   const [busy, setBusy] = useState(false);
@@ -105,8 +106,7 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
   const deleting = initialStep === "delete" || initialStep === "delete-confirm";
   const verifyingEmail = initialStep === "verify" || initialStep === "link" || initialStep === "delete-confirm";
   const strengthLabel = ["", "Weak", "Fair", "Strong"][strength];
-  const account = useAccount(initialStep === "login" || deleting);
-  const showingProfile = initialStep === "login" && account;
+  const account = useAccount(deleting);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -114,7 +114,7 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
     setBusy(true);
     const data = Object.fromEntries(new FormData(event.currentTarget));
     try {
-      const response = await fetch(`/api/auth/${showingProfile ? "logout" : endpoint}`, {
+      const response = await fetch(`/api/auth/${endpoint}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
@@ -123,13 +123,13 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
         throw new Error(typeof result.detail === "string" ? result.detail : "Something went wrong. Please try again.");
       }
       if (result.step === "deleted") {
-        window.location.replace("/auth?status=deleted");
+        window.location.replace("/?auth=login&status=deleted");
       } else if (result.step === "verify" || result.step === "password" || result.step === "delete-confirm") {
-        window.location.replace(`/auth?step=${result.step}`);
+        onStep(result.step);
       } else if (result.step === "signed-in") {
-        window.location.replace("/dashboard");
+        window.location.replace(destination);
       } else {
-        window.location.replace("/auth");
+        onStep("login");
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Something went wrong. Please try again.");
@@ -140,50 +140,17 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
   if (deleting && !account) {
     return account === undefined
       ? <p role="status">Loading your account…</p>
-      : <p>Sign in to manage your account. <Link href="/auth" className="account-text-link">Sign in</Link></p>;
-  }
-
-  if (showingProfile) {
-    return (
-      <>
-        <div className="profile-heading">
-          <h1>Your profile</h1>
-          <AccountMenu googleConnected={showingProfile.google_connected} />
-        </div>
-        <dl className="profile-details">
-          <div><dt>Name</dt><dd>{showingProfile.name}</dd></div>
-          <div><dt>Email</dt><dd>{showingProfile.email}</dd></div>
-          <div><dt>Privacy</dt><dd><Link className="account-text-link" href="/cookies">Cookie settings</Link></dd></div>
-          <div><dt>Google sign-in</dt><dd>{showingProfile.google_connected ? "Connected" : "Not connected"}</dd></div>
-        </dl>
-        <form className="account-form" method="post" onSubmit={submit}>
-          <button className="primary-link" disabled={busy} type="submit">{busy ? "Signing out…" : "Sign out"}</button>
-        </form>
-        {message && <p className="account-error" role="alert">{message}</p>}
-      </>
-    );
+      : <p>Sign in to manage your account. <button type="button" className="account-text-link" onClick={() => onStep("login")}>Sign in</button></p>;
   }
 
   return (
     <>
-      {verifyingEmail && <VerificationEnvelope key={resendCount} />}
+      <VerificationEnvelope key={resendCount} />
       <h1>{title}</h1>
       <p className="account-description">{description}</p>
       <CookieControls forAccount />
       {deleted && initialStep === "login" && <p className="account-success" role="status">Your Portfolabs account has been deleted.</p>}
-      {entry && (
-        <form action="/api/auth/google/start" method="get">
-          <button className="account-google" type="submit" disabled={!cookiesAllowed}>
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48">
-              <path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.7-.4-4H24v7.7h11a9.4 9.4 0 0 1-4.1 6.2v5h6.6c3.9-3.6 6.1-8.8 6.1-14.9Z"/>
-              <path fill="#34A853" d="M24 44c5.5 0 10.2-1.8 13.5-4.6l-6.6-5A12 12 0 0 1 12.8 28H6v5.2A20 20 0 0 0 24 44Z"/>
-              <path fill="#FBBC05" d="M12.8 28a12 12 0 0 1 0-8V14.8H6a20 20 0 0 0 0 18.4Z"/>
-              <path fill="#EA4335" d="M24 12c3 0 5.6 1 7.7 3l5.8-5.8A19.3 19.3 0 0 0 24 4 20 20 0 0 0 6 14.8l6.8 5.2A12 12 0 0 1 24 12Z"/>
-            </svg>
-            Continue with Google
-          </button>
-        </form>
-      )}
+      {entry && <GoogleButton disabled={!cookiesAllowed} />}
       <form className="account-form" method="post" onSubmit={submit}>
         {initialStep === "register" && (
           <label>Name<input name="name" autoComplete="name" maxLength={120} required /></label>
@@ -231,7 +198,7 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
         {creatingPassword && (
           <label className="account-terms">
             <input name="termsAccepted" type="checkbox" value="yes" required />
-            <span>I agree to the <Link href="/terms">Terms of Service</Link> and acknowledge the <Link href="/privacy">Privacy Policy</Link>.</span>
+            <span>I agree to the <Link href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</Link> and acknowledge the <Link href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.</span>
           </label>
         )}
         {message && <p className="account-error" role="alert">{message}</p>}
@@ -246,10 +213,11 @@ export default function AuthForm({ initialStep, googleError, deleted }: {
         }} />
       )}
       {initialStep === "login" ? (
-        <p className="account-switch">New to Portfolabs? <Link href="/auth?step=register">Create an account</Link></p>
+        <p className="account-switch">New to Portfolabs? <button type="button" onClick={() => onStep("register")}>Create an account</button></p>
       ) : (
         <p className="account-switch">
-          <Link href="/auth">{deleting ? "Cancel and return to profile" : initialStep === "register" ? "Back to sign in" : "Start again"}</Link>
+          {deleting ? <a href="/profile">Return to profile</a>
+            : <button type="button" onClick={() => onStep("login")}>{initialStep === "register" ? "Back to sign in" : "Start again"}</button>}
         </p>
       )}
     </>

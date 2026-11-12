@@ -12,6 +12,7 @@ from app.db import engine
 from app.ai import router as ai_router
 from app.migrate import migrate_schema
 from app.portfolios import router as portfolios_router
+from app.profile import router as profile_router
 from app.reports import router as reports_router
 from app.uploads import media_router, router as uploads_router
 
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Portfolio Automation", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(portfolios_router)
+app.include_router(profile_router)
 app.include_router(uploads_router)
 app.include_router(media_router)
 app.include_router(reports_router)

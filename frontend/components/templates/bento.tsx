@@ -1,3 +1,4 @@
+import { CareerSections } from "./career-sections";
 import { Space_Grotesk } from "next/font/google";
 import { displayHost, initials, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
 import { UserImage } from "./user-image";
@@ -20,7 +21,7 @@ export function Bento({ content }: { content: PortfolioContent }) {
 
         <div className={`${styles.card} ${styles.avatar}`} aria-hidden={avatar ? undefined : "true"}>
           {avatar ? (
-            <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.photo} priority />
+            <UserImage src={avatar} framing={content.avatar_framing} alt={`Photo of ${name}`} className={styles.photo} priority />
           ) : (
             <span>{initials(name)}</span>
           )}
@@ -39,7 +40,7 @@ export function Bento({ content }: { content: PortfolioContent }) {
           const href = safeHref(project.url);
           return (
             <article key={index} className={`${styles.card} ${styles.project} ${styles[`tone${index % 5}`]}`}>
-              <UserImage src={project.image} alt="" className={styles.cover} />
+              <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
               <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
               <h2>{project.title}</h2>
               {project.description && <p>{project.description}</p>}
@@ -73,6 +74,7 @@ export function Bento({ content }: { content: PortfolioContent }) {
             </ul>
           </nav>
         )}
+        <CareerSections experience={content.experience} credentials={content.credentials} />
       </main>
     </div>
   );

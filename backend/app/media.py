@@ -71,10 +71,33 @@ def image_key(url: str | None, user_id: int | None) -> str | None:
     return f"{folder}/{filename}"
 
 
+def resume_key(user_id: int, resume_id: str) -> str:
+    return f"u{user_id}/{resume_id}.pdf"
+
+
 def image_urls(content: dict):
     yield content.get("avatar")
     for project in content.get("projects", []):
         yield project.get("image")
+
+
+def image_keys(user_id: int, *documents: dict | None) -> set[str]:
+    return {
+        key for document in documents if document
+        for url in image_urls(document) if (key := image_key(url, user_id))
+    }
+
+
+def lock_portfolio_media(db, user_id: int) -> None:
+    """Serialize reference changes and cleanup for an owner's images."""
+    from sqlalchemy import select, update
+
+    from app.models import User
+
+    if db.get_bind().dialect.name == "sqlite":
+        db.execute(update(User).where(User.id == user_id).values(id=User.id))
+    else:
+        db.scalar(select(User.id).where(User.id == user_id).with_for_update())
 
 
 def normalize_images(content: dict, user_id: int | None) -> dict:
@@ -82,13 +105,14 @@ def normalize_images(content: dict, user_id: int | None) -> dict:
         key = image_key(url, user_id)
         return f"{media_base()}/{key}" if key else None
 
+    avatar = canonical(content.get("avatar"))
+    projects = []
+    for project in content.get("projects", []):
+        image = canonical(project.get("image"))
+        projects.append({**project, "image": image, "image_framing": project.get("image_framing") if image else None})
     return {
-        **content,
-        "avatar": canonical(content.get("avatar")),
-        "projects": [
-            {**project, "image": canonical(project.get("image"))}
-            for project in content.get("projects", [])
-        ],
+        **content, "avatar": avatar, "avatar_framing": content.get("avatar_framing") if avatar else None,
+        "projects": projects,
     }
 
 
@@ -135,10 +159,10 @@ def r2_client():
     )
 
 
-def store(key: str, data: bytes) -> None:
+def store(key: str, data: bytes, content_type: str = "image/webp") -> None:
     if r2_configured():
         r2_client().put_object(
-            Bucket=os.environ["R2_BUCKET"], Key=key, Body=data, ContentType="image/webp",
+            Bucket=os.environ["R2_BUCKET"], Key=key, Body=data, ContentType=content_type,
         )
         return
     path = LOCAL_DIR / key
@@ -146,7 +170,7 @@ def store(key: str, data: bytes) -> None:
     path.write_bytes(data)
 
 
-def read_image(key: str) -> bytes:
+def read_media(key: str) -> bytes:
     if r2_configured():
         from botocore.exceptions import ClientError
 
@@ -168,10 +192,12 @@ def remove(keys: list[str]) -> None:
         return
     if r2_configured():
         for start in range(0, len(keys), 1000):
-            r2_client().delete_objects(
+            result = r2_client().delete_objects(
                 Bucket=os.environ["R2_BUCKET"],
                 Delete={"Objects": [{"Key": key} for key in keys[start:start + 1000]], "Quiet": True},
             )
+            if result.get("Errors"):
+                raise RuntimeError("R2 could not remove every requested image.")
         return
     for key in keys:
         (LOCAL_DIR / key).unlink(missing_ok=True)
@@ -190,35 +216,40 @@ def purge_user_media(db, user_id: int) -> None:
         logging.getLogger(__name__).warning("Image cleanup failed (%s)", type(error).__name__)
 
 
-def cleanup_user_media(user_id: int, min_age_seconds: int = 3600) -> None:
+def cleanup_user_media(user_id: int, min_age_seconds: int = 3600, *, released: set[str] | None = None) -> None:
     """Delete a user's stored images that no portfolio (draft or published) uses any more.
 
-    Images uploaded in the last hour are kept, so an upload that hasn't been saved
-    into a draft yet is never removed by an unrelated save.
+    Remove released references immediately. Keep newly uploaded files that might
+    still be waiting for their first draft save.
     """
     from datetime import datetime, timedelta, timezone
 
     from sqlalchemy import delete, select
 
     from app.db import SessionLocal
-    from app.models import Portfolio, Upload
+    from app.models import Portfolio, Upload, User
 
     try:
         with SessionLocal() as db:
-            used: set[str] = set()
-            for documents in db.execute(
-                select(Portfolio.draft_content, Portfolio.published_content).where(Portfolio.owner_id == user_id)
-            ):
-                for content in documents:
-                    if not content:
-                        continue
-                    used.update(key for url in image_urls(content) if (key := image_key(url, user_id)))
-
+            lock_portfolio_media(db, user_id)
+            used = {
+                key for documents in db.execute(
+                    select(Portfolio.draft_content, Portfolio.published_content).where(Portfolio.owner_id == user_id)
+                )
+                for key in image_keys(user_id, *documents)
+            }
+            profile_content, resume_id = db.execute(
+                select(User.profile_content, User.resume_id).where(User.id == user_id)
+            ).one_or_none() or (None, None)
+            used.update(image_keys(user_id, profile_content))
+            if resume_id:
+                used.add(resume_key(user_id, resume_id))
+            released = released or set()
             cutoff = datetime.now(timezone.utc) - timedelta(seconds=min_age_seconds)
             stale = []
             for upload in db.scalars(select(Upload).where(Upload.owner_id == user_id)):
                 created = upload.created_at if upload.created_at.tzinfo else upload.created_at.replace(tzinfo=timezone.utc)
-                if upload.key not in used and created < cutoff:
+                if upload.key not in used and (upload.key in released or created < cutoff):
                     stale.append(upload)
             if not stale:
                 return

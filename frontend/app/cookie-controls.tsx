@@ -82,7 +82,7 @@ export default function CookieControls({ settings = false, forAccount = false }:
         <h2 id={settings ? "cookie-settings" : "cookie-notice-title"}>{settings ? "Your cookie settings" : "Essential cookies"}</h2>
         <p>{settings
           ? "You can browse with cookies off. Turning them off here also signs you out in this browser."
-          : <>We use cookies to verify your email and keep you signed in. You can browse without them. <Link href="/cookies">Cookie policy</Link></>}</p>
+          : <>We use cookies to verify your email and keep you signed in. You can browse without them. <Link href="/cookies" target={forAccount ? "_blank" : undefined} rel={forAccount ? "noopener noreferrer" : undefined}>Cookie policy</Link></>}</p>
         {settings && <p role="status" className="cookie-status">{current === "allowed" ? "Essential cookies allowed" : current === "declined" ? "Cookies declined" : current === "undecided" ? "No choice saved" : ""}</p>}
         {error && <p className="account-error" role="alert">{error}</p>}
       </div>

@@ -1,3 +1,4 @@
+import { CareerSections } from "./career-sections";
 import { Sora } from "next/font/google";
 import { displayHost, initials, paragraphs, safeHref, type PortfolioContent } from "@/lib/portfolio";
 import { UserImage } from "./user-image";
@@ -16,7 +17,7 @@ export function Aurora({ content }: { content: PortfolioContent }) {
       <main className={styles.content}>
         <header className={styles.hero}>
           {avatar ? (
-            <UserImage src={avatar} alt={`Photo of ${name}`} className={styles.photo} priority />
+            <UserImage src={avatar} framing={content.avatar_framing} alt={`Photo of ${name}`} className={styles.photo} priority />
           ) : (
             <div className={styles.badge} aria-hidden="true">{initials(name)}</div>
           )}
@@ -56,7 +57,7 @@ export function Aurora({ content }: { content: PortfolioContent }) {
                 const href = safeHref(project.url);
                 return (
                   <article key={index} className={`${styles.glass} ${styles.card}`}>
-                    <UserImage src={project.image} alt="" className={styles.cover} />
+                    <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
                     <span className={styles.num}>{String(index + 1).padStart(2, "0")}</span>
                     <h3>{project.title}</h3>
                     {project.description && <p>{project.description}</p>}
@@ -71,6 +72,7 @@ export function Aurora({ content }: { content: PortfolioContent }) {
             </div>
           </section>
         )}
+        <CareerSections experience={content.experience} credentials={content.credentials} />
       </main>
     </div>
   );

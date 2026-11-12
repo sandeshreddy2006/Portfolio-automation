@@ -3,6 +3,7 @@ import Link from "next/link";
 import { templateInfo } from "@/components/templates/meta";
 import Brand from "./brand";
 import CookieControls from "./cookie-controls";
+import { AuthLink } from "./auth/auth-dialog";
 import AccountNavigation from "./auth/account-menu";
 import { HomeNavigation, HomeSectionLink } from "./home-navigation";
 import HomePreview from "./home-preview";
@@ -104,7 +105,7 @@ export default function Home() {
               Choose a template, add your work or import your résumé, and publish a portfolio at your own shareable address.
             </p>
             <div className="hero-actions">
-              <Link className="primary-link" href="/dashboard">Start building <Arrow /></Link>
+              <AuthLink className="primary-link" step="register" whenSignedIn="/dashboard">Get started <Arrow /></AuthLink>
               <Link className="source-link" href="/templates">Browse templates</Link>
             </div>
           </div>
@@ -202,7 +203,7 @@ export default function Home() {
         <section className="cta-band" aria-labelledby="cta-title">
           <h2 id="cta-title">Ready to publish yours?</h2>
           <p>Create an account, pick a design, and have a link to share today.</p>
-          <Link className="primary-link" href="/dashboard">Start building <Arrow /></Link>
+          <AuthLink className="primary-link" step="register" whenSignedIn="/dashboard">Get started <Arrow /></AuthLink>
         </section>
       </main>
 
