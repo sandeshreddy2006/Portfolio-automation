@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
 const sections = [
   { id: "designs", label: "Designs" },
@@ -32,6 +32,35 @@ export function HomeSectionLink({ id, children, className, onNavigate }: {
 export function HomeNavigation() {
   const [open, setOpen] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
+
+  useLayoutEffect(() => {
+    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    if (navigation?.type !== "reload" || window.location.hash || navigation.name !== window.location.href) return;
+
+    const previous = history.scrollRestoration;
+    history.scrollRestoration = "manual";
+    let frame = 0;
+    let active = true;
+
+    function resetAfterLoad() {
+      // The browser can restore its saved position at the end of the load event.
+      frame = requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "instant" });
+        history.scrollRestoration = previous;
+        active = false;
+      });
+    }
+
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (document.readyState === "complete") resetAfterLoad();
+    else window.addEventListener("load", resetAfterLoad, { once: true });
+
+    return () => {
+      window.removeEventListener("load", resetAfterLoad);
+      cancelAnimationFrame(frame);
+      if (active) history.scrollRestoration = previous;
+    };
+  }, []);
 
   return (
     <nav className="home-nav" aria-label="Main navigation" onKeyDown={(event) => {

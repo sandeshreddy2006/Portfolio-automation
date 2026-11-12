@@ -5,6 +5,7 @@ import Brand from "./brand";
 import CookieControls from "./cookie-controls";
 import AccountNavigation from "./auth/account-menu";
 import { HomeNavigation, HomeSectionLink } from "./home-navigation";
+import HomePreview from "./home-preview";
 
 const workflow = [
   {
@@ -80,51 +81,6 @@ function Arrow() {
   );
 }
 
-function PortfolioPreview() {
-  return (
-    <figure className="preview">
-      <figcaption className="preview-caption">
-        <span>Example portfolio</span>
-      </figcaption>
-      <div className="preview-stage" aria-hidden="true">
-        <div className="preview-orbit preview-orbit-outer" />
-        <div className="preview-orbit preview-orbit-inner" />
-        <div className="preview-window">
-          <div className="window-bar">
-            <span className="window-dots"><i /><i /><i /></span>
-            <span>/p/alex-morgan</span>
-            <span className="window-arrow">↗</span>
-          </div>
-          <div className="sample">
-            <div className="sample-top"><span>Alex Morgan</span><span>Work</span></div>
-            <div className="sample-copy">
-              <span>Designer &amp; developer</span>
-              <strong>Making digital<br />things feel human.</strong>
-            </div>
-            <div className="sample-art">
-              <svg viewBox="0 0 300 120" fill="none" preserveAspectRatio="xMidYMid slice">
-                <defs>
-                  <linearGradient id="sample-line" x1="24" y1="94" x2="274" y2="28" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#a5c254" stopOpacity=".28" />
-                    <stop offset=".55" stopColor="#d8fa73" />
-                    <stop offset="1" stopColor="#d8fa73" stopOpacity=".45" />
-                  </linearGradient>
-                </defs>
-                <g stroke="url(#sample-line)" strokeWidth=".75">
-                  {Array.from({ length: 13 }, (_, line) => (
-                    <path key={line} d={`M-10 ${68 + line * 4} C 48 ${116 - line * 5}, 85 ${-45 + line * 7}, 156 ${35 + line * 3} S 234 ${112 - line * 4}, 312 ${14 + line * 8}`} />
-                  ))}
-                </g>
-              </svg>
-              <span>Selected work</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </figure>
-  );
-}
-
 export default function Home() {
   return (
     <div id="top" className="landing" tabIndex={-1}>
@@ -141,8 +97,8 @@ export default function Home() {
           <div className="hero-copy">
             <p className="eyebrow intro-label"><span aria-hidden="true" /> Portfolio website builder</p>
             <h1 id="hero-title">
-              A website for
-              <br />your best work.
+              <span className="headline-line"><span>A website for</span></span>{" "}
+              <span className="headline-line"><span>your best work.</span></span>
             </h1>
             <p className="hero-description">
               Choose a template, add your work or import your résumé, and publish a portfolio at your own shareable address.
@@ -152,7 +108,7 @@ export default function Home() {
               <Link className="source-link" href="/templates">Browse templates</Link>
             </div>
           </div>
-          <PortfolioPreview />
+          <HomePreview />
         </section>
 
         <section id="designs" tabIndex={-1} className="section" aria-labelledby="designs-title">
