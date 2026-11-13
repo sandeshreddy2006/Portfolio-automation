@@ -27,7 +27,7 @@ export default function SupportPage() {
       <p>Use <strong>Disconnect Vercel</strong> in the editor to remove the connection. To take a deployed copy offline, manage the project or deployment in your Vercel workspace. The <Link href="/eula">Vercel Integration EULA</Link> and <Link href="/privacy#vercel-integration">Privacy Policy</Link> explain how the connection works.</p>
 
       <h2>Custom domain help</h2>
-      <p>In <strong>Hosting → Connect a custom domain</strong>, add the TXT record shown by Portfolabs, then click <strong>Check DNS</strong>. Add the routing records the editor shows next, allow time for your DNS provider to update them, and check again.</p>
+      <p>In <strong>Hosting → Connect a custom domain</strong>, add a new TXT record using the name and value shown by Portfolabs. Leave existing TXT records in place, then click <strong>Check DNS</strong>. Use Copy name and Copy value in the editor. If your DNS provider appends the domain name automatically, enter only the prefix. Keep the TXT record. If the editor shows a CNAME for www and you already have one named www, edit it to use the exact value from the editor. If no record exists for that hostname, add the record shown. Changing a routing record moves traffic for that hostname to your portfolio. Allow time for DNS to update, then click Check DNS again.</p>
 
       <h2>Contact support</h2>
       <p>Email <a href={`mailto:${CONTACT_EMAIL}?subject=Portfolabs%20support`}>{CONTACT_EMAIL}</a>. Include the portfolio URL, the step you were on, and the error message you saw. Keep passwords, API tokens, and verification codes private.</p>

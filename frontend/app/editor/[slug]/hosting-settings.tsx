@@ -146,15 +146,31 @@ export default function HostingSettings({ slug, published, unpublished, disabled
             {domain.active && published && <a className={styles.secondary} href={`https://${domain.hostname}`} target="_blank" rel="noopener noreferrer">Open custom domain</a>}
             {!domain.active && (
               <>
-                <p className={styles.hint}>{domain.attached ? "Add the DNS records below, then check again. DNS changes can take time to appear." : "Add the TXT record at your DNS provider, then check DNS to get your routing records."}</p>
+                <p className={styles.hint}>{domain.attached
+                  ? "Keep the verification TXT record. If a CNAME already exists for this exact hostname, edit its value to match the CNAME below. Otherwise, add the routing record shown. This changes where visitors to that hostname land. Then click Check DNS again."
+                  : "At your DNS provider, add a new TXT record using the name and value below. Leave your existing TXT records in place. Then click Check DNS to get the routing record."}</p>
+                <p className={styles.hint}>If your provider appends the domain to the Name field, enter only the prefix. For example, in GoDaddy enter <code>_portfolabs.www</code> for <code>_portfolabs.www.example.com</code> when editing <code>example.com</code>.</p>
                 <ul className={styles.dnsRecords}>
                   {domain.records.map(({ type, name, value }, index) => (
                     <li key={`${type}-${name}-${index}`}>
-                      <strong>{type}</strong> <code>{name}</code>
-                      <button type="button" className={styles.linkButton} onClick={() => {
-                        navigator.clipboard.writeText(value).then(() => setCopied(value)).catch(() => setError("Couldn’t copy. Select and copy the value instead."));
-                      }}>{copied === value ? "Copied" : "Copy value"}</button>
-                      <code>{value}</code>
+                      <strong>{type}</strong>
+                      {([["Name", name], ["Value", value]] as const).map(([label, field]) => {
+                        const key = `${index}-${label}`;
+                        return (
+                          <div key={label} className={styles.dnsField}>
+                            <span>{label}</span>
+                            <code>{field}</code>
+                            <button type="button" className={styles.linkButton} onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(field);
+                                setCopied(key);
+                              } catch {
+                                setError(`Couldn’t copy. Select and copy the ${label.toLowerCase()} instead.`);
+                              }
+                            }}>{copied === key ? `${label} copied` : `Copy ${label.toLowerCase()}`}</button>
+                          </div>
+                        );
+                      })}
                     </li>
                   ))}
                 </ul>
