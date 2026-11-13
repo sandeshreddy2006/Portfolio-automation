@@ -29,6 +29,9 @@ export default function SupportPage() {
       <h2>Custom domain help</h2>
       <p>In <strong>Hosting → Connect a custom domain</strong>, add a new TXT record using the name and value shown by Portfolabs. Leave existing TXT records in place, then click <strong>Check DNS</strong>. Use Copy name and Copy value in the editor. If your DNS provider appends the domain name automatically, enter only the prefix. Keep the TXT record. If the editor shows a CNAME for www and you already have one named www, edit it to use the exact value from the editor. If no record exists for that hostname, add the record shown. Changing a routing record moves traffic for that hostname to your portfolio. Allow time for DNS to update, then click Check DNS again.</p>
 
+      <h3>Open your portfolio without www</h3>
+      <p>Once your www address works, you can forward the bare domain to it. In GoDaddy, open DNS → Forwarding, choose Add Forwarding under Domain, and enter your full HTTPS address with www. Select Permanent (301) and save. This replaces what visitors see at the bare domain, so keep any site there by leaving forwarding off. Keep your existing www CNAME and verification TXT record. <a href="https://www.godaddy.com/help/forward-my-godaddy-domain-12123">GoDaddy forwarding instructions</a>.</p>
+
       <h2>Contact support</h2>
       <p>Email <a href={`mailto:${CONTACT_EMAIL}?subject=Portfolabs%20support`}>{CONTACT_EMAIL}</a>. Include the portfolio URL, the step you were on, and the error message you saw. Keep passwords, API tokens, and verification codes private.</p>
     </LegalPage>

@@ -144,6 +144,11 @@ export default function HostingSettings({ slug, published, unpublished, disabled
           <>
             <p className={styles.hint}>{domain.hostname} · {domain.active ? (published ? "Connected" : "Connected, publish to go live") : "Waiting for DNS"}</p>
             {domain.active && published && <a className={styles.secondary} href={`https://${domain.hostname}`} target="_blank" rel="noopener noreferrer">Open custom domain</a>}
+            {domain.active && published && domain.hostname.startsWith("www.") && (
+              <p className={styles.hint}>
+                Want the address without www to open your portfolio too? If you want to replace whatever the bare domain currently serves, set up a permanent redirect from <strong>{domain.hostname.slice(4)}</strong> to <strong>{`https://${domain.hostname}/`}</strong>. In GoDaddy, go to DNS → Forwarding and add a Domain redirect (301). Keep your www CNAME and verification TXT record.
+              </p>
+            )}
             {!domain.active && (
               <>
                 <p className={styles.hint}>{domain.attached
