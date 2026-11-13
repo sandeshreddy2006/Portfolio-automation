@@ -109,10 +109,10 @@ export default function ResumeImport({ content, disabled, onApply, onStore }: {
                 <span><strong>Project · {project.title}</strong>{project.description && <small>{project.description}</small>}{project.url && <small>{project.url}</small>}</span>
               </label>
             ))}
-            {suggestions.experience.map(({ role, company, dates, description }, index) => (
+            {suggestions.experience.map(({ role, company, location, dates, description }, index) => (
               <label key={`experience-${index}`}>
                 <input type="checkbox" checked={selected.has(`experience-${index}`)} onChange={(event) => toggle(`experience-${index}`, event.target.checked)} />
-                <span><strong>Experience · {role}</strong><small>{[company, dates, description].filter(Boolean).join(" · ")}</small></span>
+                <span><strong>Experience · {role}</strong><small>{[company, location, dates, description].filter(Boolean).join(" · ")}</small></span>
               </label>
             ))}
             {suggestions.credentials.map(({ title, issuer, date, url }, index) => (

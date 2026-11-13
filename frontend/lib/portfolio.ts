@@ -14,7 +14,7 @@ export type PortfolioProject = {
   image_framing?: ImageFraming | null;
 };
 
-export type PortfolioExperience = { role: string; company: string; dates: string; description: string };
+export type PortfolioExperience = { role: string; company: string; location?: string | null; dates: string; description: string };
 export type PortfolioCredential = { title: string; issuer: string; date: string; url?: string | null };
 
 export type ProfileContent = {

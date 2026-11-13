@@ -207,7 +207,7 @@ def test_career_sections_and_project_link_publish_with_the_draft(client):
 
     additions = {
         "experience": [{
-            "role": "Software Engineer", "company": "Example Labs",
+            "role": "Software Engineer", "company": "Example Labs", "location": "India",
             "dates": "Jan 2024 – Present", "description": "Built a dashboard.",
         }],
         "credentials": [{

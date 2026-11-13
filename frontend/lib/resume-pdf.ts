@@ -40,7 +40,8 @@ export async function importResume(file: File) {
             current = { text: "", y, left: x, right: x + item.width };
             pageLines.push(current);
           }
-          current.text += (current.text ? " " : "") + item.str;
+          const gap = x - current.right;
+          current.text += (current.text ? (gap > Math.max(12, item.height * 1.5) ? "\t" : " ") : "") + item.str;
           current.left = Math.min(current.left, x);
           current.right = Math.max(current.right, x + item.width);
         }

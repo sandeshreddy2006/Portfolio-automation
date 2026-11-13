@@ -68,6 +68,19 @@ function projectsFrom(lines: ResumeLine[]) {
   return projects;
 }
 
+const companyWords = /\b(?:pvt|ltd|limited|inc|llc|corp|corporation|company|consulting|services|technologies|solutions|labs|university)\b/i;
+const countryCodes = "IN US GB CA AU NZ DE FR SG AE NL JP CN BR IE SE CH IT ES MX ZA KR PK BD LK NP ID MY PH NG KE".split(" ");
+const regions = new Intl.DisplayNames(["en"], { type: "region" });
+const countryNames = new Set(countryCodes.map((code) => regions.of(code)?.toLowerCase()));
+
+function looksLikeLocation(text: string) {
+  const parts = text.split(/,\s*/);
+  const last = parts.at(-1)?.trim() ?? "";
+  return /^(?:remote|hybrid|on-site|onsite|usa|uk|uae)$/i.test(last)
+    || countryNames.has(last.toLowerCase())
+    || (parts.length > 1 && /^[A-Z]{2}$/.test(last));
+}
+
 function experienceFrom(lines: ResumeLine[]) {
   const experience: ResumeDetails["experience"] = [];
   let job: ResumeDetails["experience"][number] | undefined;
@@ -75,33 +88,49 @@ function experienceFrom(lines: ResumeLine[]) {
     const text = cleanText(line.text.replace(bullet, ""));
     if (!text) continue;
     const dates = text.match(datePattern)?.[0] ?? "";
-    const details = dates ? text.replace(dates, "").replace(/^[\s,|–—-]+|[\s,|–—-]+$/g, "") : text;
-    if (job && dates && !details) {
-      job.dates ||= dates;
+    const raw = dates ? line.text.replace(dates, "") : line.text;
+    const parts = raw.replace(bullet, "").split(/\t+|\s+(?:at|[-—–|·])\s+/i).flatMap((part) => {
+      const value = cleanText(part).replace(/^[,|–—-]+|[,|–—-]+$/g, "").trim();
+      const match = value.match(/^(.+?),\s*(.+)$/);
+      if (!match || looksLikeLocation(value) && !companyWords.test(match[1]) && !roleWords.test(match[1])) return [value];
+      return looksLikeLocation(match[2]) || roleWords.test(match[1]) || roleWords.test(match[2])
+        ? [match[1], match[2]] : [value];
+    }).filter(Boolean);
+    const location = parts.find(looksLikeLocation) ?? "";
+    const names = parts.filter((part) => part !== location);
+    if (!names.length) {
+      if (job) {
+        job.dates ||= dates;
+        job.location ||= location.slice(0, 120);
+      }
       continue;
     }
-    const bulletedDescription = bullet.test(line.text) && !(dates && roleWords.test(details) && /\s(?:at|[-—–|])\s/i.test(details));
-    if (job && (bulletedDescription || (!dates && (text.length > 85 || /[.!?]$/.test(text))))) {
+    const roleIndex = names.findIndex((part) => roleWords.test(part) && !companyWords.test(part));
+    const isDescription = bullet.test(line.text) && !(dates && roleIndex >= 0 && names.length > 1);
+    if (job && (isDescription || (!dates && !location && names.length === 1 && roleIndex < 0
+        && !companyWords.test(text) && (text.length > 85 || /[.!?]$/.test(text))))) {
       job.description = descriptionWith(job.description, text);
       continue;
     }
-    const [first, ...rest] = details.split(/\s+(?:at|[-—–|])\s+|,\s+/i);
-    const companyFirst = rest.length === 1 && !roleWords.test(first) && roleWords.test(rest[0]);
-    const role = companyFirst ? rest[0] : first;
-    const company = companyFirst ? first : rest.join(", ");
-    if (!role) continue;
-    if (job && !job.company && !job.description && !company && !(job.dates && dates)) {
-      if (!roleWords.test(job.role) && roleWords.test(role)) {
+    const role = names[roleIndex >= 0 ? roleIndex : 0];
+    const company = names.filter((part) => part !== role).join(", ");
+    if (job && !job.company && !job.description && !company) {
+      if (!roleWords.test(job.role) && roleIndex >= 0) {
         job.company = job.role;
         job.role = role.slice(0, 120);
-      } else {
+      } else if (roleIndex < 0 && roleWords.test(job.role) && !(job.dates && dates && !location)) {
         job.company = role.slice(0, 120);
+      } else {
+        job = undefined;
       }
-      job.dates ||= dates;
-      continue;
+      if (job) {
+        job.dates ||= dates;
+        job.location ||= location.slice(0, 120);
+        continue;
+      }
     }
     if (experience.length >= MAX_RESUME_ENTRIES) break;
-    job = { role: role.slice(0, 120), company: company.slice(0, 120), dates, description: "" };
+    job = { role: role.slice(0, 120), company: company.slice(0, 120), location: location.slice(0, 120), dates, description: "" };
     experience.push(job);
   }
   return experience;

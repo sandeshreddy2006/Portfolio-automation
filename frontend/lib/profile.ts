@@ -27,8 +27,8 @@ export function prepareProfile<T extends ProfileContent>(content: T): { value: T
     if (!label || !url) return { value: content, error: `Link ${index + 1} needs both a label and a web address.` };
     links.push({ label, url });
   }
-  const experience = (content.experience ?? []).map(({ role, company, dates, description }) => ({
-    role: role.trim(), company: company.trim(), dates: dates.trim(), description: description.trim(),
+  const experience = (content.experience ?? []).map(({ role, company, location, dates, description }) => ({
+    role: role.trim(), company: company.trim(), location: location?.trim() || undefined, dates: dates.trim(), description: description.trim(),
   })).filter((entry) => Object.values(entry).some(Boolean));
   if (experience.some(({ role }) => !role)) return { value: content, error: "Each work experience entry needs a role." };
 

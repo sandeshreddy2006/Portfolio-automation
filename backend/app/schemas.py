@@ -36,6 +36,7 @@ class PortfolioProject(BaseModel):
 class PortfolioExperience(BaseModel):
     role: Title
     company: str = Field(default="", max_length=120)
+    location: str | None = Field(default=None, max_length=120)
     dates: str = Field(default="", max_length=100)
     description: str = Field(default="", max_length=4000)
 

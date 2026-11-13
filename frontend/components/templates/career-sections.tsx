@@ -8,10 +8,10 @@ export function CareerSections({ experience = [], credentials = [] }: Pick<Portf
         <section className={styles.section} aria-labelledby="work-experience">
           <h2 id="work-experience">Work experience</h2>
           <ul>
-            {experience.map(({ role, company, dates, description }, index) => (
+            {experience.map(({ role, company, location, dates, description }, index) => (
               <li key={index}>
                 <h3>{role}</h3>
-                {(company || dates) && <p>{[company, dates].filter(Boolean).join(" · ")}</p>}
+                {(company || location || dates) && <p>{[company, location, dates].filter(Boolean).join(" · ")}</p>}
                 {description && <p className={styles.description}>{description}</p>}
               </li>
             ))}
