@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { allowsAuthCookies, authCookieHeader, authHeaders, backendAuthUrl, signedOutHeaders } from "../backend";
 
 const getRoutes = new Set(["session", "google/start", "google/callback", "verification"]);
-const postRoutes = new Set(["register", "login", "verify", "set-password", "logout", "delete/start", "delete/confirm", "verification/resend"]);
+const postRoutes = new Set(["register", "login", "verify", "set-password", "logout", "delete/start", "delete/confirm", "verification/resend", "password/reset/start", "password/reset/confirm", "password/change/start", "password/change/confirm"]);
 
 async function forward(
   request: NextRequest,

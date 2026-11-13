@@ -44,18 +44,21 @@ def test_the_hold_expires(client):
     assert create(sam, "alex-site").status_code == 201
 
 
-def test_a_deleted_account_holds_its_addresses_for_everyone(client):
-    user = make_user()
-    owner = login_as(user)
+def test_account_deletion_releases_current_and_previous_addresses(client, monkeypatch):
+    from app import auth
+
+    monkeypatch.setattr(auth, "deliver_challenge", lambda *args: None)
+    monkeypatch.setattr(auth.secrets, "randbelow", lambda _: 123456)
+    owner = login_as(make_user())
     create(owner, "gone-soon")
-    with SessionLocal() as db:
-        slugs.hold_user_slugs(db, user.id)
-        db.commit()
-        assert db.scalars(select(SlugHold.owner_id)).all() == [None]
-    # Even the same person signing up again can't instantly reuse it.
-    again = login_as(make_user("alex2@example.com"))
-    owner.delete("/api/portfolios/gone-soon")
-    assert create(again, "gone-soon").status_code == 409
+    assert owner.patch("/api/portfolios/gone-soon/address", json={"slug": "current-site"}).status_code == 200
+    assert owner.post("/api/auth/delete/start").status_code == 200
+    assert owner.post("/api/auth/delete/confirm", json={"code": "123456"}).status_code == 200
+    assert client.get("/api/public/current-site").status_code == 404
+    assert client.get("/api/public/gone-soon/redirect").status_code == 404
+    again = login_as(make_user())
+    assert create(again, "gone-soon").status_code == 201
+    assert create(again, "current-site").status_code == 201
 
 
 def test_moderation_tool_unpublishes_a_portfolio(client, capsys, monkeypatch):

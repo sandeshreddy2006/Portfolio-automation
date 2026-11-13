@@ -41,7 +41,7 @@ export default function TermsPage() {
       <p>To the extent the law allows, Portfolabs isn’t liable for indirect or consequential losses, or for loss of data or opportunities, arising from your use of the service. Nothing in these terms limits rights you have under the law that can’t be limited.</p>
 
       <h2>Ending things</h2>
-      <p>You can delete your account at any time from the account menu. We may suspend or close accounts that break these terms.</p>
+      <p>You can delete your account at any time from the account menu. Deletion takes your Portfolabs portfolios offline and releases their addresses for reuse. We may suspend or close accounts that break these terms.</p>
 
       <h2>Changes and contact</h2>
       <p>We may update these terms. If the change matters, we’ll update the date above and tell you. Using Portfolabs after a change means you accept it. Our <Link href="/privacy">Privacy Policy</Link> explains how we handle your data. Questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>

@@ -100,11 +100,13 @@ def deliver_account_email(
 
 
 def send_verification_code(
-    recipient: str, code: str, *, purpose: Literal["verify", "link", "delete"],
+    recipient: str, code: str, *, purpose: Literal["verify", "link", "delete", "reset", "change"],
 ) -> None:
     subject, action = {
         "verify": ("Verify your Portfolabs email", "verify your email address"),
         "link": ("Link your Google account to Portfolabs", "link Google to your account"),
+        "reset": ("Reset your Portfolabs password", "reset your password"),
+        "change": ("Confirm your Portfolabs password change", "change your password"),
         "delete": ("Confirm deletion of your Portfolabs account", "permanently delete your account"),
     }[purpose]
     deliver_account_email(recipient, subject, f"Use this Portfolabs code to {action}.", code=code)

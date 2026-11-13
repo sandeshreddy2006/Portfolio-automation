@@ -6,7 +6,7 @@ the first Alex ever shared would start showing someone else's portfolio.
 
 import time
 
-from sqlalchemy import select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import Portfolio, SlugHold
@@ -24,11 +24,14 @@ def stop_redirects_to(db: Session, slug: str) -> None:
         earlier.redirect_to = None
 
 
-def hold_user_slugs(db: Session, user_id: int) -> None:
-    """Reserve every address a deleted account used. Nobody, including the old owner, gets them back."""
-    for slug in db.scalars(select(Portfolio.slug).where(Portfolio.owner_id == user_id)):
-        stop_redirects_to(db, slug)
-        hold_slug(db, slug, None)
+def release_user_slugs(db: Session, user_id: int) -> None:
+    """Release current and previous addresses when an account is deleted."""
+    addresses = select(Portfolio.slug).where(Portfolio.owner_id == user_id)
+    db.execute(delete(SlugHold).where(or_(
+        SlugHold.owner_id == user_id,
+        SlugHold.slug.in_(addresses),
+        SlugHold.redirect_to.in_(addresses),
+    )))
 
 
 def is_held_for_someone_else(db: Session, slug: str, user_id: int) -> bool:

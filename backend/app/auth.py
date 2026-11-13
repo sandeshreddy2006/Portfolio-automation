@@ -22,9 +22,9 @@ from app.db import get_db
 from app.google_oauth import frontend_origin, google_authorization, google_config, google_identity
 from app.media import lock_portfolio_media, purge_user_media
 from app.domains import cleanup_orphan_domains
-from app.slugs import hold_user_slugs
+from app.slugs import release_user_slugs
 from app.models import AuthChallenge, AuthRateLimit, AuthSession, User
-from app.schemas import AccountDetails, GoogleIdentity, PasswordLogin, RegisterAccount, SetAccountPassword, VerifyAccountCode
+from app.schemas import AccountDetails, GoogleIdentity, PasswordChangeRequest, PasswordLogin, PasswordResetRequest, PasswordUpdate, RegisterAccount, SetAccountPassword, VerifyAccountCode
 
 router = APIRouter(prefix="/api/auth", tags=["accounts"])
 logger = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ def email_retry_after(db: Session, email: str) -> int:
 
 
 def deliver_challenge(email: str, code: str, purpose: str) -> None:
-    email_purpose = {"google_link": "link", "delete": "delete"}.get(purpose, "verify")
+    email_purpose = {"google_link": "link", "delete": "delete", "password_reset": "reset", "password_change": "change"}.get(purpose, "verify")
     try:
         send_verification_code(email, code, purpose=email_purpose)
     except (OSError, KeyError, ValueError) as error:
@@ -327,10 +327,10 @@ def pending_verification(request: Request, db: Session) -> AuthChallenge:
     token = get_cookie(request, "challenge")
     pending = db.get(AuthChallenge, digest(token)) if token else None
     if pending is None or pending.expires_at <= now() or (
-        pending.code_hash is None and pending.purpose != "register_placeholder"
+        pending.code_hash is None and pending.purpose not in ("register_placeholder", "reset_placeholder")
     ):
         raise HTTPException(400, "This verification has expired. Start again for a new code.")
-    if pending.purpose == "delete":
+    if pending.purpose in ("delete", "password_change"):
         user = current_user(request, db)
         if user is None or user.id != pending.user_id:
             raise HTTPException(401, "Sign in to manage your account.")
@@ -352,7 +352,7 @@ def resend_verification(request: Request, response: Response, db: Database):
     throttle_email(db, email)
 
     code, code_hash = None, None
-    if purpose != "register_placeholder":
+    if purpose not in ("register_placeholder", "reset_placeholder"):
         code = f"{secrets.randbelow(1_000_000):06d}"
         code_hash = code_digest(token_hash, code)
         while code_hash == previous_code_hash:
@@ -384,6 +384,72 @@ def resend_verification(request: Request, response: Response, db: Database):
     return {"retry_after": email_retry_after(db, email)}
 
 
+@router.post("/password/reset/start")
+def start_password_reset(body: PasswordResetRequest, response: Response, db: Database):
+    email = body.email.lower()
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None:
+        throttle_email(db, email)
+        start_challenge(db, response, email=email, name="", purpose="reset_placeholder", require_code=False)
+    else:
+        try:
+            start_challenge(db, response, email=email, name=user.name, purpose="password_reset", user_id=user.id)
+        except HTTPException as error:
+            if error.status_code != 503:
+                raise
+            # Give the same response for unavailable delivery and unknown addresses.
+            start_challenge(db, response, email=email, name="", purpose="reset_placeholder", require_code=False)
+    return {"step": "reset-confirm"}
+
+
+@router.post("/password/change/start")
+def start_password_change(body: PasswordChangeRequest, request: Request, response: Response, db: Database):
+    user = current_user(request, db)
+    if user is None:
+        raise HTTPException(401, "Sign in to change your password.")
+    throttle(db, "password-change", str(user.id), 10, 3600)
+    db.commit()
+    if not password_matches(body.current_password, user.password_hash):
+        raise HTTPException(400, "Your current password is incorrect.")
+    start_challenge(db, response, email=user.email, name=user.name, purpose="password_change", user_id=user.id)
+    return {"step": "change-confirm"}
+
+
+def update_account_password(body: PasswordUpdate, request: Request, response: Response, db: Session, purpose: str):
+    user = current_user(request, db) if purpose == "password_change" else None
+    if purpose == "password_change" and user is None:
+        raise HTTPException(401, "Sign in to change your password.")
+    token = get_cookie(request, "challenge") or ""
+    challenge = db.get(AuthChallenge, digest(token))
+    if challenge is None or challenge.user_id is None:
+        verified_challenge(db, request, body.code, (purpose,))
+        raise HTTPException(400, "Start again for a new code.")
+    user_id = user.id if user else challenge.user_id
+    lock_portfolio_media(db, user_id)
+    pending = verified_challenge(db, request, body.code, (purpose,), user_id)
+    updated = db.execute(update(User).where(User.id == user_id, User.email == pending.email)
+                         .values(password_hash=password_hash(body.password)))
+    if not updated.rowcount:
+        raise HTTPException(400, "Start again for a new code.")
+    db.execute(delete(AuthChallenge).where(AuthChallenge.user_id == user_id,
+               AuthChallenge.purpose.in_(("password_reset", "password_change"))))
+    db.execute(delete(AuthSession).where(AuthSession.user_id == user_id))
+    db.commit()
+    for name in ("session", "challenge", "oauth"):
+        set_cookie(response, name, "", 0)
+    return {"step": "password-updated"}
+
+
+@router.post("/password/reset/confirm")
+def confirm_password_reset(body: PasswordUpdate, request: Request, response: Response, db: Database):
+    return update_account_password(body, request, response, db, "password_reset")
+
+
+@router.post("/password/change/confirm")
+def confirm_password_change(body: PasswordUpdate, request: Request, response: Response, db: Database):
+    return update_account_password(body, request, response, db, "password_change")
+
+
 @router.post("/delete/start")
 def start_account_deletion(request: Request, response: Response, db: Database):
     user = current_user(request, db)
@@ -402,13 +468,13 @@ def confirm_account_deletion(
     user = current_user(request, db)
     if user is None:
         raise HTTPException(401, "Sign in to delete your account.")
-    verified_challenge(db, request, body.code, ("delete",), user.id)
     lock_portfolio_media(db, user.id)
+    verified_challenge(db, request, body.code, ("delete",), user.id)
     email = user.email
     db.execute(delete(AuthChallenge).where(or_(AuthChallenge.email == email, AuthChallenge.user_id == user.id)))
     db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))
     purge_user_media(db, user.id)
-    hold_user_slugs(db, user.id)
+    release_user_slugs(db, user.id)
     db.delete(user)
     try:
         db.commit()

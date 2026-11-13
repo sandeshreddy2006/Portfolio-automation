@@ -555,3 +555,28 @@ article .cookie-panel { margin-top: 24px; }
   .auth-dialog[open] { animation: none; }
   .sign-in-link { transition: none; }
 }
+
+.verification-code-field { position: relative; display: block; }
+.account-form .verification-code-field input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+.verification-code-boxes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(4px, 1.4vw, 9px); }
+.verification-code-boxes > span {
+  display: grid;
+  place-items: center;
+  height: clamp(39px, 12vw, 54px);
+  border: 1px solid #b9bfa9;
+  border-radius: 8px;
+  background: white;
+  font: 700 22px/1 var(--mono);
+}
+.verification-code-field:focus-within .verification-code-boxes > [data-active="true"] {
+  outline: 2px solid #55763a;
+  outline-offset: 1px;
+  background: #eef3dd;
+}

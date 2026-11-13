@@ -128,7 +128,7 @@ export default function Profile() {
 
   return (
     <main className={`page-width ${styles.page}`}>
-      <div className={styles.titleRow}>
+      <div className={styles.profileHero}>
         <div>
           <h1 className={styles.title}>Your profile</h1>
           <p className={styles.lead}>Save your details once and reuse them when you build a portfolio.</p>
@@ -138,16 +138,8 @@ export default function Profile() {
       {message && <p className={styles.note} role="status">{message}</p>}
       {error && <p className={styles.error} role="alert">{error}</p>}
 
+      <div className={styles.profileLayout}>
       <div className={`${styles.form} ${styles.profileForm}`}>
-        <section className={styles.group}>
-          <h2>Account</h2>
-          <p>{details.email}</p>
-          <GoogleButton connect connected={details.google_connected} disabled={busy} />
-          <div className={styles.actions}>
-            <button type="button" className={styles.secondary} onClick={() => void signOut()}>Sign out</button>
-            <AuthLink className={styles.danger} step="delete">Delete account</AuthLink>
-          </div>
-        </section>
         <section className={styles.group}>
           <h2>Portfolio details</h2>
           <ImageField label="Profile photo" kind="avatar" template="editorial" value={content.avatar}
@@ -176,6 +168,17 @@ export default function Profile() {
           <button type="button" className={styles.primary} disabled={busy || !dirty} onClick={() => void save()}>Save profile</button>
           <Link className={styles.secondary} href="/dashboard">My portfolios</Link>
         </div>
+      </div>
+        <aside className={styles.profileAccount}>
+          <h2>Account &amp; security</h2>
+          <p className={styles.hint}>{details.email}</p>
+          <GoogleButton connect connected={details.google_connected} disabled={busy} />
+          <div className={styles.actions}>
+            <button type="button" className={styles.secondary} onClick={() => void signOut()}>Sign out</button>
+            <AuthLink className={styles.secondary} step="change-password">Change password</AuthLink>
+          </div>
+          <div className={styles.profileDanger}><AuthLink className={styles.danger} step="delete">Delete account</AuthLink></div>
+        </aside>
       </div>
     </main>
   );

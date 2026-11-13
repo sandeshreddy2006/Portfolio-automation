@@ -227,3 +227,39 @@ def test_google_with_an_existing_email_account_needs_an_email_code_to_link(clien
     assert sent[-1][0] == "gina@example.com" and sent[-1][2] == "link"
     assert browser.post("/api/auth/verify", json={"code": sent[-1][1]}).json() == {"step": "signed-in"}
     assert browser.get("/api/auth/session").json()["google_connected"] is True
+
+
+def test_password_reset_is_private_and_revokes_sessions(client, sent):
+    from conftest import login_as, make_user
+
+    owner = make_user()
+    other_session = login_as(owner)
+    start = "/api/auth/password/reset/start"
+    confirm = "/api/auth/password/reset/confirm"
+    assert client.post(start, json={"email": "unknown@example.com"}).json() == {"step": "reset-confirm"}
+    assert sent == []
+    assert client.post(start, json={"email": owner.email}).json() == {"step": "reset-confirm"}
+    assert sent[-1][2] == "reset"
+    payload = {"code": sent[-1][1], "password": PASSWORD}
+    assert client.post(confirm, json=payload).json() == {"step": "password-updated"}
+    assert other_session.get("/api/auth/session").json() is None
+    assert client.post(confirm, json=payload).status_code == 400
+    assert client.post("/api/auth/login", json={"email": owner.email, "password": PASSWORD}).status_code == 200
+
+
+def test_password_change_requires_current_password_and_email_code(client, sent):
+    signed_up(client, sent)
+    skip_cooldown()
+    start = "/api/auth/password/change/start"
+    confirm = "/api/auth/password/change/confirm"
+    assert client.post(start, json={"current_password": "incorrect"}).status_code == 400
+    assert client.post(start, json={"current_password": PASSWORD}).json() == {"step": "change-confirm"}
+    assert sent[-1][2] == "change"
+    code = sent[-1][1]
+    wrong = "000000" if code != "000000" else "111111"
+    updated = "different-password-123"
+    assert client.post(confirm, json={"code": wrong, "password": updated}).status_code == 400
+    assert client.post(confirm, json={"code": code, "password": updated}).json() == {"step": "password-updated"}
+    assert client.get("/api/auth/session").json() is None
+    assert client.post("/api/auth/login", json={"email": "new@example.com", "password": PASSWORD}).status_code == 401
+    assert client.post("/api/auth/login", json={"email": "new@example.com", "password": updated}).status_code == 200

@@ -137,6 +137,18 @@ class SetAccountPassword(BaseModel):
     password: Password
 
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+
+
+class PasswordUpdate(VerifyAccountCode, SetAccountPassword):
+    pass
+
+
 class AccountDetails(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

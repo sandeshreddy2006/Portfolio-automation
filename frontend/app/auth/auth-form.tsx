@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useAccount } from "./use-account";
 import GoogleButton from "./google-button";
+import VerificationCode from "./verification-code";
 import ResendCode from "./resend-code";
 import CookieControls, { useCookiePreference } from "../cookie-controls";
 
-export type AuthStep = "login" | "register" | "verify" | "link" | "password" | "delete" | "delete-confirm";
+export type AuthStep = "login" | "register" | "verify" | "link" | "password" | "delete" | "delete-confirm" | "forgot" | "reset-confirm" | "change-password" | "change-confirm";
 const minimumPasswordLength = 8;
 
 function passwordStrength(password: string) {
@@ -67,9 +68,33 @@ const steps = {
     action: "Send verification code",
     endpoint: "set-password",
   },
+  forgot: {
+    title: "Forgot your password?",
+    description: "Enter your email. If it matches an account, we’ll send a six-digit reset code.",
+    action: "Send reset code",
+    endpoint: "password/reset/start",
+  },
+  "reset-confirm": {
+    title: "Reset your password",
+    description: "Enter your email code and choose a new password. The code expires in 10 minutes.",
+    action: "Reset password",
+    endpoint: "password/reset/confirm",
+  },
+  "change-password": {
+    title: "Change your password",
+    description: "Enter your current password. We’ll email a code to confirm the change.",
+    action: "Send verification code",
+    endpoint: "password/change/start",
+  },
+  "change-confirm": {
+    title: "Confirm password change",
+    description: "Enter your email code and choose a new password. You’ll sign in again on every device.",
+    action: "Change password",
+    endpoint: "password/change/confirm",
+  },
   delete: {
     title: "Delete your account",
-    description: "This permanently removes your account and signs you out of all devices. We’ll email you a code to confirm.",
+    description: "This permanently deletes your account and Portfolabs portfolios. Their links will stop showing your work, and your Portfolabs addresses can be claimed again. Copies deployed to your own Vercel workspace must be removed there.",
     action: "Send deletion code",
     endpoint: "delete/start",
   },
@@ -92,8 +117,8 @@ function googleMessage(error?: string) {
   return "";
 }
 
-export default function AuthForm({ initialStep, googleError, deleted, destination, onStep }: {
-  initialStep: AuthStep; googleError?: string; deleted: boolean; destination: string; onStep: (step: AuthStep) => void;
+export default function AuthForm({ initialStep, googleError, deleted, passwordUpdated, destination, onStep }: {
+  initialStep: AuthStep; googleError?: string; deleted: boolean; passwordUpdated: boolean; destination: string; onStep: (step: AuthStep) => void;
 }) {
   const cookiesAllowed = useCookiePreference() === "allowed";
   const [busy, setBusy] = useState(false);
@@ -103,10 +128,12 @@ export default function AuthForm({ initialStep, googleError, deleted, destinatio
   const { title, description, action, endpoint } = steps[initialStep];
   const entry = initialStep === "login" || initialStep === "register";
   const creatingPassword = initialStep === "register" || initialStep === "password";
+  const changingPassword = initialStep === "change-password" || initialStep === "change-confirm";
+  const newPassword = creatingPassword || initialStep === "reset-confirm" || initialStep === "change-confirm";
   const deleting = initialStep === "delete" || initialStep === "delete-confirm";
-  const verifyingEmail = initialStep === "verify" || initialStep === "link" || initialStep === "delete-confirm";
+  const verifyingEmail = initialStep === "verify" || initialStep === "link" || initialStep === "delete-confirm" || initialStep === "reset-confirm" || initialStep === "change-confirm";
   const strengthLabel = ["", "Weak", "Fair", "Strong"][strength];
-  const account = useAccount(deleting);
+  const account = useAccount(deleting || changingPassword);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -124,7 +151,9 @@ export default function AuthForm({ initialStep, googleError, deleted, destinatio
       }
       if (result.step === "deleted") {
         window.location.replace("/?auth=login&status=deleted");
-      } else if (result.step === "verify" || result.step === "password" || result.step === "delete-confirm") {
+      } else if (result.step === "password-updated") {
+        window.location.replace("/?auth=login&status=password-updated");
+      } else if (result.step === "reset-confirm" || result.step === "change-confirm" || result.step === "verify" || result.step === "password" || result.step === "delete-confirm") {
         onStep(result.step);
       } else if (result.step === "signed-in") {
         window.location.replace(destination);
@@ -137,7 +166,7 @@ export default function AuthForm({ initialStep, googleError, deleted, destinatio
     }
   }
 
-  if (deleting && !account) {
+  if ((deleting || changingPassword) && !account) {
     return account === undefined
       ? <p role="status">Loading your account…</p>
       : <p>Sign in to manage your account. <button type="button" className="account-text-link" onClick={() => onStep("login")}>Sign in</button></p>;
@@ -150,24 +179,26 @@ export default function AuthForm({ initialStep, googleError, deleted, destinatio
       <p className="account-description">{description}</p>
       <CookieControls forAccount />
       {deleted && initialStep === "login" && <p className="account-success" role="status">Your Portfolabs account has been deleted.</p>}
+      {passwordUpdated && <p className="account-success" role="status">Password updated. Sign in with your new password.</p>}
       {entry && <GoogleButton disabled={!cookiesAllowed} />}
       <form className="account-form" method="post" onSubmit={submit}>
         {initialStep === "register" && (
           <label>Name<input name="name" autoComplete="name" maxLength={120} required /></label>
         )}
-        {entry && (
+        {(entry || initialStep === "forgot") && (
           <label>Email<input name="email" type="email" autoComplete="email" maxLength={254} required /></label>
         )}
-        {(entry || initialStep === "password") && (
+        {initialStep === "change-password" && <label>Current password<input name="current_password" type="password" autoComplete="current-password" maxLength={128} required /></label>}
+        {(entry || newPassword) && (
           <div className="account-password">
-            <label htmlFor="account-password">Password</label>
+            <label htmlFor="account-password">{newPassword && !creatingPassword ? "New password" : "Password"}</label>
             <input
               id="account-password"
               name="password" type="password" maxLength={128}
-              minLength={creatingPassword ? minimumPasswordLength : undefined}
-              autoComplete={creatingPassword ? "new-password" : "current-password"}
-              aria-describedby={creatingPassword ? "password-guidance" : undefined}
-              onChange={creatingPassword ? (event) => {
+              minLength={newPassword ? minimumPasswordLength : undefined}
+              autoComplete={newPassword ? "new-password" : "current-password"}
+              aria-describedby={newPassword ? "password-guidance" : undefined}
+              onChange={newPassword ? (event) => {
                 const input = event.currentTarget;
                 const password = input.value;
                 input.setCustomValidity(password && Array.from(password).length < minimumPasswordLength
@@ -176,7 +207,7 @@ export default function AuthForm({ initialStep, googleError, deleted, destinatio
               } : undefined}
               required
             />
-            {creatingPassword && (
+            {newPassword && (
               <span className="password-strength" data-strength={strength}>
                 <span className="password-strength-bars" aria-hidden="true">
                   {[1, 2, 3].map((bar) => <span key={bar} data-filled={bar <= strength} />)}
@@ -189,12 +220,7 @@ export default function AuthForm({ initialStep, googleError, deleted, destinatio
             )}
           </div>
         )}
-        {verifyingEmail && (
-          <label>
-            Verification code
-            <input key={resendCount} name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required />
-          </label>
-        )}
+        {verifyingEmail && <VerificationCode key={resendCount} />}
         {creatingPassword && (
           <label className="account-terms">
             <input name="termsAccepted" type="checkbox" value="yes" required />
@@ -212,11 +238,12 @@ export default function AuthForm({ initialStep, googleError, deleted, destinatio
           setMessage("");
         }} />
       )}
+      {initialStep === "login" && <p className="account-switch"><button type="button" onClick={() => onStep("forgot")}>Forgot password?</button></p>}
       {initialStep === "login" ? (
         <p className="account-switch">New to Portfolabs? <button type="button" onClick={() => onStep("register")}>Create an account</button></p>
       ) : (
         <p className="account-switch">
-          {deleting ? <a href="/profile">Return to profile</a>
+          {deleting || changingPassword ? <a href="/profile">Return to profile</a>
             : <button type="button" onClick={() => onStep("login")}>{initialStep === "register" ? "Back to sign in" : "Start again"}</button>}
         </p>
       )}
