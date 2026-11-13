@@ -1,17 +1,17 @@
-"""Bring the database up to date with the SQLAlchemy models without ever dropping data.
+"""Apply additive schema changes and remove expired operational records.
 
-This only creates missing tables, columns and indexes. Removing or reshaping a
-column is a deliberate change and needs a hand-written migration, so nothing
-here deletes data when a deployment's models differ from the database.
+Schema reconciliation preserves tables, columns, and their data. Cleanup only
+targets known temporary records and legacy holds left by deleted accounts.
 """
 
 import logging
 import os
+import time
 
-from sqlalchemy import Connection, Engine, Table, inspect, select
+from sqlalchemy import Connection, Engine, Table, delete, inspect, or_, select
 
 from app.db import Base, engine
-from app.models import SchemaDeployment
+from app.models import AuthChallenge, AuthRateLimit, AuthSession, SchemaDeployment, SlugHold, User, VercelInstallState
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +41,24 @@ def add_missing_columns(connection: Connection, table: Table) -> int:
     return added
 
 
+def cleanup_stale_records(connection: Connection, now: int) -> None:
+    expiring = (AuthChallenge, AuthSession, AuthRateLimit, VercelInstallState)
+    for model in expiring:
+        result = connection.execute(delete(model).where(model.expires_at <= now))
+        if result.rowcount:
+            logger.info("Removed %d expired rows from %s", result.rowcount, model.__tablename__)
+
+    # Older account deletion left ownerless holds. Single-portfolio deletion
+    # still reserves the address for a live owner, and rename redirects still work.
+    owner_exists = select(User.id).where(User.id == SlugHold.owner_id).exists()
+    result = connection.execute(delete(SlugHold).where(or_(
+        SlugHold.until <= now,
+        SlugHold.redirect_to.is_(None) & ~owner_exists,
+    )))
+    if result.rowcount:
+        logger.info("Removed %d expired or orphaned address holds", result.rowcount)
+
+
 def reconcile(connection: Connection, deployment_id: str | None) -> None:
     if connection.dialect.name != "sqlite":
         connection.exec_driver_sql("SELECT pg_advisory_xact_lock(80336924018423)")
@@ -61,6 +79,8 @@ def reconcile(connection: Connection, deployment_id: str | None) -> None:
             added += add_missing_columns(connection, table)
         for index in table.indexes:
             index.create(connection, checkfirst=True)
+
+    cleanup_stale_records(connection, int(time.time()))
 
     if deployment_id:
         connection.execute(deployments.insert().values(deployment_id=deployment_id))

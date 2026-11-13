@@ -40,3 +40,42 @@ def test_migration_is_repeatable(tmp_path):
     migrate_schema(database, "deploy-1")
     migrate_schema(database, "deploy-1")
     migrate_schema(database, "deploy-2")
+
+
+def test_deployment_cleanup_releases_legacy_holds_once_and_preserves_live_rows(tmp_path, monkeypatch):
+    from app.models import AuthRateLimit, SlugHold, User
+
+    monkeypatch.setattr("app.migrate.time.time", lambda: 1000)
+    database = create_engine(f"sqlite:///{(tmp_path / 'cleanup.db').as_posix()}")
+    migrate_schema(database)
+    holds = SlugHold.__table__
+    limits = AuthRateLimit.__table__
+    with database.begin() as connection:
+        connection.execute(User.__table__.insert().values(
+            id=1, name="Alex", email="alex@example.com", password_hash="unused",
+        ))
+        connection.execute(holds.insert(), [
+            {"slug": "expired", "owner_id": 1, "until": 999, "redirect_to": None},
+            {"slug": "old-deletion", "owner_id": None, "until": 2000, "redirect_to": None},
+            {"slug": "missing-owner", "owner_id": 9, "until": 2000, "redirect_to": None},
+            {"slug": "reserved", "owner_id": 1, "until": 2000, "redirect_to": None},
+            {"slug": "redirect", "owner_id": 1, "until": 2000, "redirect_to": "current"},
+        ])
+        connection.execute(limits.insert(), [
+            {"key": "expired", "attempts": 1, "expires_at": 1000},
+            {"key": "active", "attempts": 1, "expires_at": 1100},
+        ])
+
+    migrate_schema(database, "deploy-1")
+    with database.begin() as connection:
+        assert set(connection.scalars(holds.select().with_only_columns(holds.c.slug))) == {"reserved", "redirect"}
+        assert list(connection.scalars(limits.select().with_only_columns(limits.c.key))) == ["active"]
+        connection.execute(holds.insert().values(slug="late-legacy-hold", until=2000))
+
+    migrate_schema(database, "deploy-1")
+    with database.connect() as connection:
+        assert connection.execute(holds.select().where(holds.c.slug == "late-legacy-hold")).first()
+
+    migrate_schema(database, "deploy-2")
+    with database.connect() as connection:
+        assert connection.execute(holds.select().where(holds.c.slug == "late-legacy-hold")).first() is None
