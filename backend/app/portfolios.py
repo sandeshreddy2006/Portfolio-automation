@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.auth import current_user, throttle
 from app.auth_email import send_portfolio_live
 from app.db import get_db
+from app.domains import cleanup_orphan_domains
 from app.google_oauth import frontend_origin
 from app.media import cleanup_user_media, image_key, image_keys, image_urls, lock_portfolio_media, normalize_images
 from app.models import Portfolio, Upload, User
@@ -278,6 +279,7 @@ def delete_portfolio(slug: str, request: Request, db: Database, background: Back
     db.delete(portfolio)
     db.commit()
     background.add_task(cleanup_user_media, user.id, released=released)
+    background.add_task(cleanup_orphan_domains)
     return Response(status_code=204)
 
 

@@ -10,6 +10,7 @@ import { type PortfolioContent, type PortfolioDetail, type ProfileDetails } from
 import type { ResumeDetails } from "@/lib/resume";
 import AssistButton from "./assist-button";
 import ImageField from "./image-field";
+import HostingSettings from "./hosting-settings";
 import ResumeImport from "./resume-import";
 import PortfolioFields from "./portfolio-fields";
 import { applyResumeDetails, fillUsingProfile, prepareProfile } from "@/lib/profile";
@@ -256,7 +257,7 @@ export default function Editor({ slug }: { slug: string }) {
       <div className={styles.split}>
         <form className={styles.form} onSubmit={(event) => { event.preventDefault(); run("save"); }}>
           <nav className={styles.sectionNav} aria-label="Jump to a section">
-            {[["design", "Design"], ["about", "About you"], ["projects", "Projects"], ["experience", "Experience"], ["credentials", "Credentials"], ["links", "Links"], ["visibility", "Publish settings"]].map(([id, label]) => (
+            {[["design", "Design"], ["about", "About you"], ["projects", "Projects"], ["experience", "Experience"], ["credentials", "Credentials"], ["links", "Links"], ["visibility", "Publish settings"], ["hosting", "Hosting"]].map(([id, label]) => (
               <a key={id} href={`#sec-${id}`}>{label}</a>
             ))}
           </nav>
@@ -366,6 +367,8 @@ export default function Editor({ slug }: { slug: string }) {
               </>
             )}
           </section>
+          <HostingSettings slug={slug} published={live} unpublished={dirty || detail.has_unpublished_changes}
+            disabled={busy !== ""} publish={() => void run("publish")} />
         </form>
 
         <aside className={styles.preview} aria-label="Live preview">

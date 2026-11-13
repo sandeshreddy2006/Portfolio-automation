@@ -203,3 +203,8 @@
   flex: none; width: 16px; height: 16px; margin-top: 3px; accent-color: #55763a;
 }
 .panel .profileCheck { display: flex; align-items: flex-start; gap: 9px; }
+
+.dnsRecords { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.dnsRecords li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px; background: #eef2e4; border-radius: 6px; font-size: 13px; }
+.dnsRecords code { overflow-wrap: anywhere; min-width: 0; }
+.dnsRecords code:last-child { flex: 1 0 100%; }

@@ -224,6 +224,7 @@ export default function Home() {
             <HomeSectionLink id="faq">FAQ</HomeSectionLink>
             <Link href="/privacy">Privacy</Link>
             <Link href="/cookies">Cookie settings</Link>
+            <Link href="/support">Support</Link>
             <Link href="/terms">Terms</Link>
           </div>
         </nav>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
 import { getTemplate } from "@/components/templates";
-import { getPublished, getRedirectTarget, SLUG } from "@/lib/published";
+import { getPublished, getRedirectTarget, SITE_URL, SLUG } from "@/lib/published";
 import styles from "./public.module.css";
 
 export async function generateMetadata({ params }: PageProps<"/p/[slug]">): Promise<Metadata> {
@@ -38,7 +38,7 @@ async function Portfolio({ params }: { params: PageProps<"/p/[slug]">["params"] 
   if (!portfolio || !template) notFound();
 
   return (
-    <>
+    <div data-portfolio-export={portfolio.published_at} style={{ display: "contents" }}>
       <template.Component content={portfolio.published_content} />
       <footer className={styles.badge}>
         {portfolio.published_content.resume_id && (
@@ -47,11 +47,11 @@ async function Portfolio({ params }: { params: PageProps<"/p/[slug]">["params"] 
             <span aria-hidden="true">·</span>
           </>
         )}
-        <Link href="/">Made with Portfolabs</Link>
+        <Link href={SITE_URL}>Made with Portfolabs</Link>
         <span aria-hidden="true">·</span>
-        <Link href={`/report?slug=${slug}`} rel="nofollow">Report</Link>
+        <Link href={`${SITE_URL}/report?slug=${slug}`} rel="nofollow">Report</Link>
       </footer>
-    </>
+    </div>
   );
 }
 

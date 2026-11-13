@@ -37,12 +37,16 @@ export default function PrivacyPage() {
       <h2>Who helps us run the service</h2>
       <p>We use trusted providers to host and operate Portfolabs: Vercel (website hosting), Railway (server and database), Cloudflare (image storage), our email provider, and Google (sign-in, if you choose it, and the writing assistant). They process data only to provide their service to us.</p>
 
+      <h2 id="vercel-integration">Vercel integration</h2>
+      <p>If you connect a Vercel account or team, we store the installation ID, the team ID when applicable, the account or team display name, and an encrypted access token linked to your Portfolabs account. We use that access to identify your workspace, create projects and deployments you request, check their status, and remove the installation when you disconnect through Portfolabs. We also store project and deployment identifiers, status, and the deployment URL so you can find and update your copy.</p>
+      <p>When you deploy, we send the published page and its assets to your selected Vercel workspace. We exclude drafts and the private résumé file. If résumé downloads are enabled for the published portfolio, we may include a link to its Portfolabs download. Disconnecting through Portfolabs removes the saved connection and its associated deployment records from Portfolabs. To remove the deployed files, delete the copy in Vercel. See the <Link href="/eula">Vercel Integration EULA</Link> for the terms of use.</p>
+
       <h2>Cookies</h2>
       <p>We ask before setting the essential cookies that keep you signed in and help verify your account. You can browse without cookies and change your choice on the <Link href="/cookies">Cookie Policy</Link> page.</p>
 
       <h2>Your choices</h2>
       <ul>
-        <li>Edit or delete any portfolio at any time. Deleting a portfolio removes it from the web immediately.</li>
+        <li>Edit or delete any portfolio at any time. Deleting a portfolio takes down the Portfolabs-hosted version. Copies you deploy to your own Vercel workspace stay there until you remove them.</li>
         <li>Delete your account from the account menu. This removes your account, your portfolios and your uploaded images. Backups can take a short while to clear.</li>
         <li>Ask us what we hold about you, or to correct it, by emailing <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</li>
       </ul>

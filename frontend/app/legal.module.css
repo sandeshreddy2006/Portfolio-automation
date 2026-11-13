@@ -27,3 +27,5 @@
 .cookieList dt { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
 .cookieList dd { margin: 0; color: var(--muted); font-size: 15px; }
 .links a[aria-current="page"] { font-weight: 700; text-decoration-thickness: 2px; }
+
+.article ol { margin: 0; padding-left: 22px; list-style: decimal; }

@@ -21,6 +21,7 @@ from app.emailcheck import verify_email_domain
 from app.db import get_db
 from app.google_oauth import frontend_origin, google_authorization, google_config, google_identity
 from app.media import lock_portfolio_media, purge_user_media
+from app.domains import cleanup_orphan_domains
 from app.slugs import hold_user_slugs
 from app.models import AuthChallenge, AuthRateLimit, AuthSession, User
 from app.schemas import AccountDetails, GoogleIdentity, PasswordLogin, RegisterAccount, SetAccountPassword, VerifyAccountCode
@@ -416,6 +417,7 @@ def confirm_account_deletion(
         raise HTTPException(409, "Your account changed during deletion. Please try again.") from error
     for name in ("session", "challenge", "oauth"):
         set_cookie(response, name, "", 0)
+    background.add_task(cleanup_orphan_domains)
     background.add_task(send_account_notice, email, deleted=True)
     return {"step": "deleted"}
 

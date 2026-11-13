@@ -7,8 +7,11 @@ export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@por
 
 const legalLinks = [
   { href: "/terms", label: "Terms" },
+  { href: "/eula", label: "Vercel EULA" },
   { href: "/privacy", label: "Privacy" },
   { href: "/cookies", label: "Cookies" },
+  { href: "/support", label: "Support" },
+  { href: "/docs/vercel", label: "Vercel Guide" },
 ];
 
 export default function LegalPage({ title, updated, current, children }: { title: string; updated: string; current?: string; children: ReactNode }) {

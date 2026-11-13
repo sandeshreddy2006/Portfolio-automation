@@ -138,3 +138,50 @@ class SchemaDeployment(Base):
     __tablename__ = "schema_deployments"
 
     deployment_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+
+
+class PortfolioDomain(Base):
+    __tablename__ = "portfolio_domains"
+
+    hostname: Mapped[str] = mapped_column(String(253), primary_key=True)
+    portfolio_id: Mapped[int | None] = mapped_column(
+        ForeignKey("portfolios.id", ondelete="SET NULL"), unique=True
+    )
+    challenge: Mapped[str] = mapped_column(String(80))
+    reserved_at: Mapped[int]
+    attached: Mapped[bool]
+    active: Mapped[bool]
+    records: Mapped[list] = mapped_column(PORTFOLIO_DOCUMENT)
+
+
+class VercelConnection(Base):
+    __tablename__ = "vercel_connections"
+
+    id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    team_id: Mapped[str | None] = mapped_column(String(120))
+    label: Mapped[str] = mapped_column(String(160))
+    encrypted_token: Mapped[str] = mapped_column(String(2048))
+
+
+class VercelInstallState(Base):
+    __tablename__ = "vercel_install_states"
+
+    digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_digest: Mapped[str] = mapped_column(String(64))
+    portfolio_id: Mapped[int] = mapped_column(ForeignKey("portfolios.id", ondelete="CASCADE"))
+    expires_at: Mapped[int] = mapped_column(index=True)
+
+
+class PortfolioDeployment(Base):
+    __tablename__ = "portfolio_deployments"
+
+    portfolio_id: Mapped[int] = mapped_column(ForeignKey("portfolios.id", ondelete="CASCADE"), primary_key=True)
+    connection_id: Mapped[str] = mapped_column(ForeignKey("vercel_connections.id", ondelete="CASCADE"), primary_key=True)
+    project_name: Mapped[str] = mapped_column(String(100))
+    project_id: Mapped[str | None] = mapped_column(String(120))
+    deployment_id: Mapped[str | None] = mapped_column(String(120))
+    url: Mapped[str | None] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(24))
+    started_at: Mapped[int]
+    error: Mapped[str | None] = mapped_column(String(300))

@@ -31,6 +31,9 @@ export default function TermsPage() {
       <h2>The service</h2>
       <p>We work hard to keep Portfolabs running but we provide it “as is”. We don’t promise it will always be available or error-free, and features, limits and templates may change. Keep your own copy of anything important.</p>
 
+      <h2>Deploying to Vercel</h2>
+      <p>If you connect a Vercel workspace and deploy a copy of your portfolio, the <Link href="/eula">Vercel Integration EULA</Link> applies to that integration. You manage the deployed copy and any hosting charges through your Vercel workspace.</p>
+
       <h2>Writing assistant</h2>
       <p>AI suggestions can be wrong or sound generic. Read them before you use them. You are responsible for what you publish.</p>
 
