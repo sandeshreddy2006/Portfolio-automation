@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Brand from "./brand";
 import styles from "./legal.module.css";
 
-export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@portfolabs.com";
+export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "portfolabs@gmail.com";
 
 const legalLinks = [
   { href: "/terms", label: "Terms" },

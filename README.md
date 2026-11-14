@@ -71,13 +71,15 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 | `FRONTEND_URL` | `https://www.portfolabs.com` |
 | `AUTH_CODE_SECRET` | 32+ random characters |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | redirect URI `https://www.portfolabs.com/api/auth/google/callback` |
-| `RESEND_API_KEY`, `MAIL_FROM` | or the `SMTP_*` settings |
+| `SMTP_USERNAME`, `SMTP_PASSWORD` | Gmail sender `portfolabs@gmail.com` and its Google app password. Leave `MAIL_FROM` unset to use the SMTP address. |
+| `RESEND_API_KEY`, `MAIL_FROM` | Optional alternative to Gmail SMTP. Use a verified Resend sender. |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | image uploads to a private bucket |
 | `GEMINI_API_KEY` | optional; free key from https://aistudio.google.com/apikey. Without it the "Improve with AI" buttons are hidden |
-| `REPORT_EMAIL`, `REVALIDATE_SECRET` | optional; report emails and the takedown tool |
+| `REPORT_EMAIL`, `REVALIDATE_SECRET` | optional; use `portfolabs@gmail.com` for report notifications and set the secret for the takedown tool |
 
 **Vercel (frontend, Root Directory = `frontend`)**: `BACKEND_URL` (the Railway URL),
-optionally `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `REVALIDATE_SECRET`.
+optionally `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONTACT_EMAIL` (defaults to `portfolabs@gmail.com`),
+and `REVALIDATE_SECRET`.
 
 **Cloudflare R2**: create a private bucket and an API token with Object Read & Write
 on that bucket. Portfolabs serves images at `/media/…`. Draft images require the
