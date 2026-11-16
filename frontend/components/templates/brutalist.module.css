@@ -36,8 +36,7 @@
 .band span { color: var(--yellow); }
 
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(18px, 3vw, 32px); }
-.card { position: relative; display: flex; flex-direction: column; padding: clamp(18px, 2.5vw, 28px); border: 3px solid var(--ink); background: #fff; box-shadow: 8px 8px 0 var(--ink); transition: transform 120ms, box-shadow 120ms; }
-.card:hover { transform: translate(-4px, -4px); box-shadow: 12px 12px 0 var(--ink); }
+.card { position: relative; display: flex; flex-direction: column; padding: clamp(18px, 2.5vw, 28px); border: 3px solid var(--ink); background: #fff; box-shadow: 8px 8px 0 var(--ink); }
 .num { align-self: flex-start; padding: 2px 10px; border: 3px solid var(--ink); background: var(--pink); font-weight: 700; }
 .card h3 { margin: 16px 0 10px; font-family: var(--br-display), sans-serif; font-weight: 700; font-size: clamp(26px, 3.4vw, 42px); line-height: 1; text-transform: uppercase; letter-spacing: -.02em; overflow-wrap: anywhere; }
 .card p { flex: 1; margin: 0; line-height: 1.6; }
@@ -45,17 +44,37 @@
 .card a:hover { background: var(--ink); color: var(--yellow); }
 
 .buttons { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; padding: 0 0 24px; list-style: none; }
-.buttons a, .buttons span { display: block; padding: 14px 22px; border: 3px solid var(--ink); background: #fff; box-shadow: 6px 6px 0 var(--ink); font-family: var(--br-display), sans-serif; font-size: 18px; font-weight: 700; text-decoration: none; text-transform: uppercase; transition: transform 120ms, box-shadow 120ms; }
-.buttons a:hover { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); background: var(--pink); }
+.buttons a, .buttons span { display: block; padding: 14px 22px; border: 3px solid var(--ink); background: #fff; box-shadow: 6px 6px 0 var(--ink); font-family: var(--br-display), sans-serif; font-size: 18px; font-weight: 700; text-decoration: none; text-transform: uppercase; }
 
 @media (max-width: 720px) {
   .cards { grid-template-columns: 1fr; }
   .about, .card { box-shadow: 6px 6px 0 var(--ink); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .card, .buttons a { transition: none; }
-}
-
 .avatar { display: block; width: clamp(96px, 14vw, 170px); aspect-ratio: 1; margin: 0 0 24px; border: 3px solid var(--ink); background: #fff; box-shadow: 6px 6px 0 var(--ink); object-fit: cover; transform: rotate(-3deg); }
 .cover { display: block; width: 100%; aspect-ratio: 16 / 10; margin-top: 14px; border: 3px solid var(--ink); object-fit: cover; }
+
+.buttons a:is(:focus-visible, :active) { background: var(--pink); }
+.card a:active { background: var(--ink); color: var(--yellow); }
+
+@media (hover: hover) {
+  .buttons a:hover { background: var(--pink); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tag { animation: stamp 360ms ease-out both; }
+  .card, .buttons a, .card a { transition: transform 120ms, box-shadow 120ms; }
+  .card:focus-within { transform: translate(-4px, -4px); box-shadow: 12px 12px 0 var(--ink); }
+  .buttons a:active { transform: translate(5px, 5px); box-shadow: 1px 1px 0 var(--ink); }
+  .card a:active { transform: translateY(2px); }
+
+  @media (hover: hover) {
+    .card:hover { transform: translate(-4px, -4px); box-shadow: 12px 12px 0 var(--ink); }
+    .buttons a:hover:not(:active) { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); }
+  }
+}
+
+@keyframes stamp {
+  from { opacity: 0; transform: rotate(-7deg) scale(1.14); }
+  to { opacity: 1; transform: rotate(-2deg) scale(1); }
+}

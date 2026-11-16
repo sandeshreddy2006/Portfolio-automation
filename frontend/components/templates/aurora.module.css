@@ -29,8 +29,7 @@
 .headline { max-width: 34ch; margin: 18px 0 0; color: var(--muted); font-size: clamp(16px, 2vw, 21px); line-height: 1.5; }
 
 .pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 28px 0 0; padding: 0; list-style: none; }
-.pills a, .pills span { display: block; padding: 10px 20px; border: 1px solid #ffffff2e; border-radius: 999px; background: #ffffff10; font-size: 14px; text-decoration: none; backdrop-filter: blur(12px); transition: background-color 160ms, transform 160ms; }
-.pills a:hover { background: #ffffff26; transform: translateY(-2px); }
+.pills a, .pills span { display: block; padding: 10px 20px; border: 1px solid #ffffff2e; border-radius: 999px; background: #ffffff10; font-size: 14px; text-decoration: none; backdrop-filter: blur(12px); }
 
 .glass { border: 1px solid #ffffff1f; border-radius: 24px; background: linear-gradient(160deg, #ffffff14, #ffffff06); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 
@@ -40,8 +39,7 @@
 
 .heading { margin: 0 0 20px; font-size: 13px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.card { display: flex; flex-direction: column; padding: clamp(20px, 3vw, 30px); transition: transform 200ms, border-color 200ms; }
-.card:hover { transform: translateY(-4px); border-color: #ffffff52; }
+.card { display: flex; flex-direction: column; padding: clamp(20px, 3vw, 30px); }
 .num { font-size: 13px; color: #9ee7ff; }
 .card h3 { margin: 14px 0 10px; font-size: clamp(22px, 2.8vw, 30px); letter-spacing: -.03em; }
 .card p { flex: 1; margin: 0; color: var(--muted); line-height: 1.65; }
@@ -53,9 +51,33 @@
 
 @media (prefers-reduced-motion: reduce) {
   .glow i { animation: none; }
-  .pills a, .card { transition: none; }
-  .pills a:hover, .card:hover { transform: none; }
 }
 
 .photo { display: block; width: 104px; height: 104px; border: 2px solid #ffffff40; border-radius: 50%; object-fit: cover; box-shadow: 0 0 60px #7c5cff80; }
 .cover { display: block; width: 100%; aspect-ratio: 16 / 9; margin-bottom: 16px; border-radius: 14px; object-fit: cover; }
+
+.card:focus-within {
+  border-color: #9ee7ff90;
+  box-shadow: 0 0 28px #7c5cff30;
+}
+.pills a:is(:focus-visible, :active) { background: #ffffff26; }
+
+@media (hover: hover) {
+  .card:hover {
+    border-color: #9ee7ff90;
+    box-shadow: 0 0 28px #7c5cff30;
+  }
+  .pills a:hover { background: #ffffff26; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card { transition: transform 220ms, border-color 220ms, box-shadow 220ms; }
+  .pills a { transition: background-color 160ms, transform 160ms; }
+  .card:focus-within { transform: translateY(-4px); }
+  .pills a:active { transform: scale(.97); }
+
+  @media (hover: hover) {
+    .card:hover { transform: translateY(-4px); }
+    .pills a:hover:not(:active) { transform: translateY(-2px); }
+  }
+}

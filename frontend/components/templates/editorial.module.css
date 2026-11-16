@@ -82,3 +82,22 @@
 
 .avatar { display: block; width: clamp(84px, 11vw, 132px); aspect-ratio: 1; margin-bottom: 28px; border: 1px solid var(--ink); border-radius: 50%; object-fit: cover; }
 .cover { display: block; width: 100%; max-width: 560px; aspect-ratio: 16 / 9; margin-bottom: 18px; border-radius: 2px; object-fit: cover; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero h1 { animation: title-rise 480ms ease-out both; }
+  .work a span, .footer a span {
+    display: inline-block;
+    transition: transform 180ms ease-out;
+  }
+  .work a:is(:focus-visible, :active) span,
+  .footer a:is(:focus-visible, :active) span { transform: translate(3px, -3px); }
+
+  @media (hover: hover) {
+    .work a:hover span, .footer a:hover span { transform: translate(3px, -3px); }
+  }
+}
+
+@keyframes title-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
