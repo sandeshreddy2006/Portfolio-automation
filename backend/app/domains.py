@@ -8,7 +8,10 @@ import time
 from urllib.parse import urlsplit
 
 import dns.exception
+import dns.message
+import dns.rdatatype
 import dns.resolver
+import requests
 from fastapi import HTTPException
 from sqlalchemy import select
 
@@ -58,10 +61,33 @@ def payload(domain: PortfolioDomain | None):
 
 
 def owns_domain(domain: PortfolioDomain) -> bool:
+    name = challenge_name(domain) + "."
+    expected = domain.challenge.encode("ascii")
     try:
-        return any(b"".join(record.strings).decode("ascii", errors="replace") == domain.challenge
-                   for record in dns.resolver.resolve(challenge_name(domain) + ".", "TXT", lifetime=4))
+        if any(b"".join(record.strings) == expected
+               for record in dns.resolver.resolve(name, "TXT", lifetime=4)):
+            return True
     except dns.exception.DNSException:
+        pass
+
+    # A stale or unavailable hosting resolver can disagree with public DNS.
+    query = dns.message.make_query(name, dns.rdatatype.TXT)
+    try:
+        response = requests.post(
+            "https://cloudflare-dns.com/dns-query",
+            data=query.to_wire(),
+            headers={"Content-Type": "application/dns-message", "Accept": "application/dns-message"},
+            timeout=4,
+            allow_redirects=False,
+        )
+        if response.status_code != 200:
+            return False
+        answer = dns.message.from_wire(response.content)
+        if not query.is_response(answer):
+            return False
+        records = answer.resolve_chaining().answer
+        return records is not None and any(b"".join(record.strings) == expected for record in records)
+    except (requests.RequestException, dns.exception.DNSException):
         return False
 
 

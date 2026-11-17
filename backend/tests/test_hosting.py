@@ -174,3 +174,28 @@ def test_vercel_upload_uses_sha_references_for_static_files(monkeypatch):
     payload = calls[1][4]["payload"]
     assert payload["project"] == "prj_test" and payload["target"] == "production"
     assert payload["files"] == [{"file": path, "sha": digest, "size": 7} for path in site]
+
+
+def test_txt_verification_falls_back_to_public_dns(monkeypatch):
+    import dns.message
+    import dns.rrset
+    from types import SimpleNamespace
+
+    domain = domains.reservation("www.example.com", 1)
+    monkeypatch.setattr(domains.dns.resolver, "resolve", lambda *args, **kwargs: ())
+    value = "old-token"
+
+    def query_public_dns(url, *, data, **kwargs):
+        assert url == "https://cloudflare-dns.com/dns-query"
+        assert kwargs["allow_redirects"] is False
+        query = dns.message.from_wire(data)
+        name = "_portfolabs.www.example.com."
+        assert query.question[0].name.to_text() == name
+        answer = dns.message.make_response(query)
+        answer.answer.append(dns.rrset.from_text(name, 60, "IN", "TXT", f'"{value}"'))
+        return SimpleNamespace(status_code=200, content=answer.to_wire())
+
+    monkeypatch.setattr(domains.requests, "post", query_public_dns)
+    assert not domains.owns_domain(domain)
+    value = domain.challenge
+    assert domains.owns_domain(domain)
