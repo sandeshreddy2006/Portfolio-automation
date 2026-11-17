@@ -216,3 +216,20 @@
   .profileLayout { grid-template-columns: minmax(0, 1fr); }
   .profileAccount { grid-row: 1; position: static; }
 }
+
+.bulletField { display: grid; gap: 6px; min-width: 0; }
+.form .bulletField button, .bulletField button {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 5px;
+  min-height: 32px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #f1f4e7;
+  color: var(--ink);
+  font: 650 13px/1.2 Arial, sans-serif;
+}
+.bulletField button:hover { background: #e1eccb; }
+.bulletField button span { color: #406534; font-size: 17px; }

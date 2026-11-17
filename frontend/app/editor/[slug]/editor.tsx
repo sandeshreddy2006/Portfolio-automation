@@ -13,6 +13,7 @@ import ImageField from "./image-field";
 import HostingSettings from "./hosting-settings";
 import ResumeImport from "./resume-import";
 import { useAccount } from "../../auth/use-account";
+import BulletField from "../bullet-field";
 import PortfolioFields from "./portfolio-fields";
 import { applyResumeDetails, fillUsingProfile, prepareProfile } from "@/lib/profile";
 import styles from "../../studio.module.css";
@@ -309,12 +310,10 @@ export default function Editor({ slug }: { slug: string }) {
             </label>
             <AssistButton task="headline" text={content.headline} name={content.name}
               onAccept={(text) => update({ headline: text })} />
-            <label>Bio
-              <textarea rows={7} maxLength={4000} value={content.bio}
-                placeholder="Who are you, what do you care about, and what are you working towards? Leave a blank line between paragraphs."
-                onChange={(event) => update({ bio: event.target.value })} />
-              <small>{content.bio.length}/4000</small>
-            </label>
+            <BulletField label="Bio" rows={7} value={content.bio}
+              placeholder="Who are you, what do you care about, and what are you working towards?"
+              onChange={(bio) => update({ bio })} />
+            <small>{content.bio.length}/4000</small>
             <AssistButton task="bio" text={content.bio} name={content.name}
               onAccept={(text) => update({ bio: text })} />
           </section>

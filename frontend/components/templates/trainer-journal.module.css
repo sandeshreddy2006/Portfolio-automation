@@ -240,3 +240,81 @@
   from { opacity: 0; transform: translateY(11px) scale(.94); }
   to { opacity: 1; transform: none; }
 }
+
+.root {
+  --pixel-title: var(--trainer-title-font), ui-monospace, monospace;
+  --pixel-text: var(--trainer-text-font), ui-monospace, monospace;
+}
+.wordmark, .consoleHead h2 { font-family: var(--pixel-title); font-size: 12px; line-height: 1.5; letter-spacing: 0; }
+.hero h1 { font-family: var(--pixel-title); font-size: clamp(23px, 3.55vw, 48px); line-height: 1.45; letter-spacing: -.02em; font-weight: 400; text-shadow: 2px 2px var(--panel); }
+.hero .headline { font: 400 clamp(21px, 3vw, 30px)/1.2 var(--pixel-text); }
+.building { font: 400 clamp(13px, 2vw, 19px)/1 var(--pixel-text); }
+.consoleFoot p:last-child, .dialog .kicker { font-family: var(--pixel-text); font-size: 17px; }
+.dialog h2 { font: 400 clamp(16px, 3vw, 25px)/1.5 var(--pixel-title); }
+
+.journal > h2, .career > h2, .contact > h2 {
+  font: 400 clamp(17px, 3vw, 30px)/1.45 var(--pixel-title);
+  letter-spacing: -.035em;
+  text-transform: none;
+}
+.entries { margin-top: 18px; }
+.entry, .career > section, .contact {
+  border: 2px solid var(--frame);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 0 4px var(--shade);
+}
+.entry h3, .career h3 { font: 400 clamp(23px, 3vw, 33px)/1.05 var(--pixel-text); }
+.entry .entryLabel {
+  width: fit-content;
+  margin: 0 0 8px;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--guide);
+  color: var(--accent);
+  font: 400 17px/1.1 var(--pixel-text);
+}
+.entry .entryLabel[data-earned] { border-color: var(--button-line); background: var(--gold); color: var(--ink); }
+.entry .fieldNote { padding: 7px 9px; border-left: 3px solid var(--accent); background: var(--guide); }
+
+.career > section { margin-top: 14px; padding: clamp(16px, 4vw, 26px); }
+.career > section > h2 { font: 400 clamp(22px, 3vw, 29px)/1.1 var(--pixel-text); color: var(--accent); }
+.career > section > ul { gap: 12px; }
+.career > section li {
+  position: relative;
+  padding: 8px 0 8px 16px;
+  border-left: 2px dotted var(--line);
+}
+.career > section li::before {
+  position: absolute;
+  top: 16px; left: -5px;
+  width: 8px; height: 8px;
+  border: 1px solid var(--frame);
+  background: var(--gold);
+  content: "";
+}
+.contact { padding: clamp(16px, 4vw, 26px); }
+.contact a { display: inline-block; padding: 7px 9px; border: 1px solid var(--line); border-radius: 4px; background: var(--guide); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .entry, .career > section, .contact a { transition: transform 180ms steps(3), box-shadow 180ms ease; }
+  :is(.entry, .career > section, .contact a):is(:hover, :focus-within) { transform: translateY(-3px); box-shadow: 0 7px var(--shade); }
+  .entryLabel[data-earned], .fieldNote { animation: journal-unlock 350ms steps(4) both; }
+  @supports (animation-timeline: view()) {
+    .journal, .career, .contact {
+      animation: journal-arrive linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 85%;
+    }
+    :is(.journal, .career, .contact):focus-within { animation: none; }
+  }
+}
+@keyframes journal-unlock {
+  from { opacity: .3; transform: translateX(-5px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes journal-arrive {
+  from { translate: 0 15px; }
+  to { translate: 0 0; }
+}

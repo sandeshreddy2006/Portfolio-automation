@@ -1,5 +1,6 @@
 "use client";
 
+import { Press_Start_2P, VT323 } from "next/font/google";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent } from "react";
 import { encounters, trainerGames } from "@/lib/trainer-journal";
 import { paragraphs, safeHref, type PortfolioContent, type TrainerGame } from "@/lib/portfolio";
@@ -7,6 +8,9 @@ import { CareerSections } from "./career-sections";
 import { MiniPortfolio, TrainerEncounter, type TownPortfolio } from "./trainer-encounters";
 import { UserImage } from "./user-image";
 import styles from "./trainer-journal.module.css";
+
+const pixelTitle = Press_Start_2P({ subsets: ["latin"], weight: "400", variable: "--trainer-title-font" });
+const pixelText = VT323({ subsets: ["latin"], weight: "400", variable: "--trainer-text-font" });
 
 const subscribe = () => () => {};
 const client = () => true;
@@ -104,7 +108,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   }
 
   return (
-    <main className={styles.root} data-night={night || undefined}>
+    <main className={`${styles.root} ${pixelTitle.variable} ${pixelText.variable}`} data-night={night || undefined}>
       <div className={styles.scenery} aria-hidden="true" />
       <header className={styles.header}>
         <span className={styles.wordmark}>Trainer Journal</span>
@@ -118,7 +122,6 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
       <div className={styles.page}>
         <section className={styles.hero} aria-labelledby="trainer-title">
           <div>
-            <p className={styles.kicker}>Trainer Journal</p>
             <h1 id="trainer-title">{content.name}</h1>
             {content.headline && <p className={styles.headline}>{content.headline}</p>}
           </div>
@@ -172,12 +175,14 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
               const href = safeHref(project.url);
               return (
                 <article key={index} className={styles.entry}>
-                  {encounter && <p className={styles.kicker}>{game && badges.includes(game) ? `${encounter.badge} badge earned` : encounter.title}</p>}
+                  {encounter && <p className={styles.entryLabel} data-earned={game && badges.includes(game) || undefined}>
+                    {game && badges.includes(game) ? `${encounter.badge} badge earned` : encounter.title}
+                  </p>}
                   <h3>{project.title}</h3>
                   <UserImage src={project.image} framing={project.image_framing} className={styles.cover} />
                   {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                   {encounter && <p><strong>Signature move</strong> · {encounter.signature}</p>}
-                  {encounter && game && badges.includes(game) && <p><strong>Field note</strong> · {encounter.fieldNote}</p>}
+                  {encounter && game && badges.includes(game) && <p className={styles.fieldNote}><strong>Field note</strong> · {encounter.fieldNote}</p>}
                   <div className={styles.entryActions}>
                     {enhanced && game && <button type="button" onClick={() => visit(game)}>Play encounter</button>}
                     {href && <a href={href} target="_blank" rel="noopener noreferrer">Open project ↗</a>}

@@ -1,3 +1,4 @@
+import BulletField from "../bullet-field";
 import { MAX_RESUME_ENTRIES, type PortfolioCredential, type PortfolioExperience } from "@/lib/portfolio";
 import styles from "../../studio.module.css";
 
@@ -22,7 +23,7 @@ export default function ResumeSections({ experience, credentials, onExperience, 
             <label>Company<input value={job.company} maxLength={120} onChange={(event) => onExperience(replaceRow(experience, index, { company: event.target.value }))} /></label>
             <label>Location<input value={job.location ?? ""} maxLength={120} onChange={(event) => onExperience(replaceRow(experience, index, { location: event.target.value }))} /></label>
             <label>Dates<input value={job.dates} maxLength={100} placeholder="Jan 2024 – Present" onChange={(event) => onExperience(replaceRow(experience, index, { dates: event.target.value }))} /></label>
-            <label>Description<textarea value={job.description} maxLength={4000} rows={3} onChange={(event) => onExperience(replaceRow(experience, index, { description: event.target.value }))} /></label>
+            <BulletField label="Description" value={job.description} rows={3} onChange={(description) => onExperience(replaceRow(experience, index, { description }))} />
             <div className={styles.actions}>
               <button type="button" className={styles.danger} onClick={() => onExperience(experience.filter((_, position) => position !== index))}>Remove position</button>
             </div>

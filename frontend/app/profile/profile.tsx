@@ -8,6 +8,7 @@ import { UserImage } from "@/components/templates/user-image";
 import { applyResumeDetails, prepareProfile } from "@/lib/profile";
 import { AuthLink } from "../auth/auth-dialog";
 import GoogleButton from "../auth/google-button";
+import BulletField from "../editor/bullet-field";
 import ImageField from "../editor/[slug]/image-field";
 import PortfolioFields from "../editor/[slug]/portfolio-fields";
 import ResumeImport from "../editor/[slug]/resume-import";
@@ -171,7 +172,7 @@ export default function Profile() {
             onChange={(avatar, avatar_framing) => update({ avatar, avatar_framing })} />
           <label>Name<input value={content.name} maxLength={120} onChange={(event) => update({ name: event.target.value })} /></label>
           <label>Headline<input value={content.headline} maxLength={160} onChange={(event) => update({ headline: event.target.value })} /></label>
-          <label>Bio<textarea value={content.bio} maxLength={4000} rows={5} onChange={(event) => update({ bio: event.target.value })} /></label>
+          <BulletField label="Bio" value={content.bio} rows={5} onChange={(bio) => update({ bio })} />
         </section>
         <ResumeImport content={content} disabled={busy} onStore={storeResume} onApply={(suggestions) => {
           setContent((current) => current && applyResumeDetails(current, suggestions));

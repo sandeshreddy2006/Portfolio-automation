@@ -1,6 +1,7 @@
 import { move } from "@/lib/profile";
 import { encounters, starterProjects, trainerGames } from "@/lib/trainer-journal";
 import type { ProfileContent, TrainerGame } from "@/lib/portfolio";
+import BulletField from "../bullet-field";
 import AssistButton from "./assist-button";
 import ImageField from "./image-field";
 import ResumeSections from "./resume-sections";
@@ -28,10 +29,8 @@ export default function PortfolioFields({ content, template, disabled, update }:
               <input maxLength={120} value={project.title ?? ""}
                 onChange={(event) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, title: event.target.value } : item) })} />
             </label>
-            <label>Description
-              <textarea rows={4} maxLength={4000} value={project.description ?? ""}
-                onChange={(event) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, description: event.target.value } : item) })} />
-            </label>
+            <BulletField label="Description" rows={4} value={project.description ?? ""}
+              onChange={(description) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, description } : item) })} />
             <AssistButton task="project" text={project.description ?? ""} name={content.name} title={project.title ?? ""}
               onAccept={(text) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, description: text } : item) })} />
             <label>Link (optional)
