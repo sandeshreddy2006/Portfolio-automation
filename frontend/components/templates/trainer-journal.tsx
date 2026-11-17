@@ -37,6 +37,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   const [badges, setBadges] = useState<TrainerGame[]>([]);
   const [published, setPublished] = useState<TownPortfolio | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+  const opening = useRef<HTMLDialogElement>(null);
   const entries = trainerGames.flatMap((game) => {
     const project = content.projects.find((item) => item.trainer_game === game);
     return project ? [{ game, portfolioProject: project, ...encounters[game] }] : [];
@@ -59,10 +60,12 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   }, [storageKey]);
 
   useEffect(() => {
-    if (!boot || !enhanced) return;
-    const timer = window.setTimeout(() => setBoot(false), matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1050);
+    const intro = opening.current;
+    if (!boot || !enhanced || !portfolioKey || !intro || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!intro.open) intro.showModal();
+    const timer = window.setTimeout(() => intro.close(), 2550);
     return () => window.clearTimeout(timer);
-  }, [boot, enhanced]);
+  }, [boot, enhanced, portfolioKey]);
 
   useEffect(() => {
     if ((selected || siteOpen) && dialog.current && !dialog.current.open) dialog.current.showModal();
@@ -109,6 +112,19 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
 
   return (
     <main className={`${styles.root} ${pixelTitle.variable} ${pixelText.variable}`} data-night={night || undefined}>
+      {enhanced && boot && portfolioKey && (
+        <dialog ref={opening} className={styles.boot} aria-label="Trainer Journal intro" onClose={() => setBoot(false)}>
+          <div className={styles.bootStage}>
+            <div className={styles.bootLandscape} aria-hidden="true" />
+            <div className={styles.bootTitle}>
+              <strong>Trainer Journal</strong>
+              <span>{content.name}</span>
+            </div>
+            <span className={`${styles.trainer} ${styles.bootActor}`} aria-hidden="true"><i /><i /></span>
+            <button type="button" onClick={() => opening.current?.close()}>Skip intro</button>
+          </div>
+        </dialog>
+      )}
       <div className={styles.scenery} aria-hidden="true" />
       <header className={styles.header}>
         <span className={styles.wordmark}>Trainer Journal</span>
@@ -147,7 +163,6 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
               ))}
               <span className={styles.trainer} aria-hidden="true" style={mapPoint(...position)}><i /><i /></span>
               {published && <button type="button" className={styles.playerSite} onClick={() => { setPosition([5, 7]); setActive("published-site"); }}><i aria-hidden="true" />Mira’s portfolio</button>}
-              {boot && <div className={styles.boot}><strong>Signal Town</strong><button type="button" onClick={() => setBoot(false)}>Skip intro</button></div>}
             </div>
             <div className={styles.consoleFoot}>
               <p>{entries.length ? "Use the arrow keys or tap a building to visit." : "Assign encounters to projects in the editor to open the town’s buildings."}</p>
