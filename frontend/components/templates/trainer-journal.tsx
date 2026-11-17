@@ -164,7 +164,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
 
         <section className={styles.journal} id="trainer-projects" aria-labelledby="trainer-project-title">
           <h2 id="trainer-project-title">Trainer League</h2>
-          {paragraphs(content.bio).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+          {paragraphs(content.bio).map((paragraph, index) => <p className="portfolio-formatted-text" key={index}>{paragraph}</p>)}
           <div className={styles.entries}>
             {content.projects.map((project, index) => {
               const game = project.trainer_game;
@@ -175,7 +175,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
                   {encounter && <p className={styles.kicker}>{game && badges.includes(game) ? `${encounter.badge} badge earned` : encounter.title}</p>}
                   <h3>{project.title}</h3>
                   <UserImage src={project.image} framing={project.image_framing} className={styles.cover} />
-                  {project.description && <p>{project.description}</p>}
+                  {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                   {encounter && <p><strong>Signature move</strong> · {encounter.signature}</p>}
                   {encounter && game && badges.includes(game) && <p><strong>Field note</strong> · {encounter.fieldNote}</p>}
                   <div className={styles.entryActions}>

@@ -607,3 +607,5 @@ article .cookie-panel { margin-top: 24px; }
   font-size: 13px;
 }
 body:has([data-portfolio-export]) .platform-credits { display: none; }
+
+.portfolio-formatted-text { white-space: pre-line; }

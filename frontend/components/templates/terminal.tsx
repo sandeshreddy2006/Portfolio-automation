@@ -60,7 +60,7 @@ export function Terminal({ content }: { content: PortfolioContent }) {
                             `${project.title}/`
                           )}
                         </h2>
-                        {project.description && <p>{project.description}</p>}
+                        {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                         <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.thumb} />
                         {href && <small>{displayHost(href)}</small>}
                       </div>

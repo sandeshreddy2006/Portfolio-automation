@@ -44,7 +44,7 @@ export function Aurora({ content }: { content: PortfolioContent }) {
         {about.length > 0 && (
           <section className={`${styles.glass} ${styles.about}`} aria-label="About">
             {about.map((text, index) => (
-              <p key={index}>{text}</p>
+              <p className="portfolio-formatted-text" key={index}>{text}</p>
             ))}
           </section>
         )}
@@ -60,7 +60,7 @@ export function Aurora({ content }: { content: PortfolioContent }) {
                     <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
                     <span className={styles.num}>{String(index + 1).padStart(2, "0")}</span>
                     <h3>{project.title}</h3>
-                    {project.description && <p>{project.description}</p>}
+                    {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                     {href && (
                       <a href={href} target="_blank" rel="noopener noreferrer">
                         {displayHost(href)} <span aria-hidden="true">↗</span>

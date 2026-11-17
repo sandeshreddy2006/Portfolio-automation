@@ -37,7 +37,11 @@ export async function importResume(file: File) {
         const [, , , , x, y] = item.transform;
         if (item.str.trim()) {
           if (!current || Math.abs(y - current.y) > 3) {
-            current = { text: "", y, left: x, right: x + item.width };
+            const gapAbove = current ? Math.abs(y - current.y) : 0;
+            current = {
+              text: "", y, left: x, right: x + item.width,
+              paragraphBreak: gapAbove > Math.max(22, item.height * 1.9),
+            };
             pageLines.push(current);
           }
           const gap = x - current.right;
@@ -45,7 +49,6 @@ export async function importResume(file: File) {
           current.left = Math.min(current.left, x);
           current.right = Math.max(current.right, x + item.width);
         }
-        if (item.hasEOL) current = undefined;
       }
       for (const annotation of await page.getAnnotations()) {
         if (typeof annotation.url !== "string" || !/^https?:\/\//i.test(annotation.url)) continue;
@@ -61,7 +64,7 @@ export async function importResume(file: File) {
         if (target) (target.urls ??= []).push(url);
         else unmatchedLinks.push({ text: "", urls: [url] });
       }
-      lines.push(...pageLines);
+      lines.push(...pageLines.map((line) => ({ ...line, indent: line.left })));
       page.cleanup();
     }
 

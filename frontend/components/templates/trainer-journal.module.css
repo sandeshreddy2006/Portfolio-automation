@@ -221,3 +221,22 @@
 .trainer i:last-child { right: 31%; }
 .playerSite { display: grid; justify-items: center; gap: 4px; }
 .playerSite i { width: 23px; height: 18px; border: 2px solid #4c623b; background: linear-gradient(#aadc74 0 44%, #f6dfa4 44%); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .map { transition: background-color 420ms ease; }
+  :is(.path, .plaza, .pond, .tree, .house) { transition: filter 320ms ease; }
+  .pond {
+    background-size: 52px 52px;
+    animation: water-ripple 1350ms steps(7) 3;
+  }
+  .building .house { transition: transform 170ms steps(3), filter 260ms ease; }
+  .building:is(:hover, :focus-visible) .house { transform: translateY(-5px); }
+  .root[data-night] .scenery::after { animation: starlight 650ms steps(4) both; }
+  .playerSite { animation: site-arrive 430ms cubic-bezier(.26,.9,.34,1.25) both; }
+}
+@keyframes water-ripple { to { background-position: 52px 0; } }
+@keyframes starlight { from { opacity: 0; } to { opacity: 1; } }
+@keyframes site-arrive {
+  from { opacity: 0; transform: translateY(11px) scale(.94); }
+  to { opacity: 1; transform: none; }
+}

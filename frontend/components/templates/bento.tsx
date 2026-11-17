@@ -31,7 +31,7 @@ export function Bento({ content }: { content: PortfolioContent }) {
           <section className={`${styles.card} ${styles.about}`} aria-label="About">
             <h2>About</h2>
             {about.map((text, index) => (
-              <p key={index}>{text}</p>
+              <p className="portfolio-formatted-text" key={index}>{text}</p>
             ))}
           </section>
         )}
@@ -43,7 +43,7 @@ export function Bento({ content }: { content: PortfolioContent }) {
               <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
               <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
               <h2>{project.title}</h2>
-              {project.description && <p>{project.description}</p>}
+              {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
               {href && (
                 <a href={href} target="_blank" rel="noopener noreferrer">
                   {displayHost(href)} <span aria-hidden="true">↗</span>

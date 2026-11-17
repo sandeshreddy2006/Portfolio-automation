@@ -32,7 +32,7 @@ export function Blocky({ content }: { content: PortfolioContent }) {
             <section className={styles.panel} aria-labelledby="bk-about">
               <h2 id="bk-about">Journal</h2>
               {about.map((text, index) => (
-                <p key={index}>{text}</p>
+                <p className="portfolio-formatted-text" key={index}>{text}</p>
               ))}
             </section>
           )}
@@ -52,7 +52,7 @@ export function Blocky({ content }: { content: PortfolioContent }) {
                       )}
                       <div>
                         <h3>{project.title}</h3>
-                        {project.description && <p>{project.description}</p>}
+                        {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                         {href && (
                           <a href={href} target="_blank" rel="noopener noreferrer">
                             {displayHost(href)} ▸

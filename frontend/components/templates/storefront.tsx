@@ -59,7 +59,7 @@ export function Storefront({ content }: { content: PortfolioContent }) {
                         )}
                       </div>
                       <h3>{project.title}</h3>
-                      {project.description && <p>{project.description}</p>}
+                      {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                       {href && (
                         <a className={styles.button} href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title} on ${displayHost(href)}`}>
                           View project <span aria-hidden="true">↗</span>
@@ -74,7 +74,7 @@ export function Storefront({ content }: { content: PortfolioContent }) {
           {about.length > 0 && (
             <section aria-labelledby="storefront-about">
               <h2 id="storefront-about">About</h2>
-              {about.map((text, index) => <p key={index}>{text}</p>)}
+              {about.map((text, index) => <p className="portfolio-formatted-text" key={index}>{text}</p>)}
             </section>
           )}
           <CareerSections experience={experience} credentials={credentials} />

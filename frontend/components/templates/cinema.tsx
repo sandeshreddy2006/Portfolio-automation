@@ -65,7 +65,7 @@ export function Cinema({ content }: { content: PortfolioContent }) {
                     </div>
                     <div className={styles.details}>
                       <h3>{project.title}</h3>
-                      {project.description && <p>{project.description}</p>}
+                      {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                       {href && <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title}`}>Open project <span aria-hidden="true">↗</span></a>}
                     </div>
                   </li>
@@ -79,7 +79,7 @@ export function Cinema({ content }: { content: PortfolioContent }) {
           {about.length > 0 && (
             <section aria-labelledby="cinema-about">
               <h2 id="cinema-about">About</h2>
-              {about.map((text, index) => <p key={index}>{text}</p>)}
+              {about.map((text, index) => <p className="portfolio-formatted-text" key={index}>{text}</p>)}
             </section>
           )}
           <CareerSections experience={experience} credentials={credentials} />

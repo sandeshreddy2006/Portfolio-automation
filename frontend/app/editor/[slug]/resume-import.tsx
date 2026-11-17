@@ -106,13 +106,13 @@ export default function ResumeImport({ content, disabled, onApply, onStore }: {
             {suggestions.projects.map((project, index) => (
               <label key={`project-${index}`}>
                 <input type="checkbox" checked={selected.has(`projects-${index}`)} onChange={(event) => toggle(`projects-${index}`, event.target.checked)} />
-                <span><strong>Project · {project.title}</strong>{project.description && <small>{project.description}</small>}{project.url && <small>{project.url}</small>}</span>
+                <span><strong>Project · {project.title}</strong>{project.description && <small className="portfolio-formatted-text">{project.description}</small>}{project.url && <small>{project.url}</small>}</span>
               </label>
             ))}
             {suggestions.experience.map(({ role, company, location, dates, description }, index) => (
               <label key={`experience-${index}`}>
                 <input type="checkbox" checked={selected.has(`experience-${index}`)} onChange={(event) => toggle(`experience-${index}`, event.target.checked)} />
-                <span><strong>Experience · {role}</strong><small>{[company, location, dates, description].filter(Boolean).join(" · ")}</small></span>
+                <span><strong>Experience · {role}</strong><small>{[company, location, dates].filter(Boolean).join(" · ")}</small>{description && <small>{description}</small>}</span>
               </label>
             ))}
             {suggestions.credentials.map(({ title, issuer, date, url }, index) => (

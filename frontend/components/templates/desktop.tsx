@@ -57,7 +57,7 @@ export function Desktop({ content, resumeHref }: { content: PortfolioContent; re
           ) : <span className={styles.avatar} aria-hidden="true">{initials(name)}</span>}
           <div><h2>{name}</h2>{headline && <p>{headline}</p>}</div>
         </div>
-        {paragraphs(bio).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+        {paragraphs(bio).map((paragraph, index) => <p className="portfolio-formatted-text" key={index}>{paragraph}</p>)}
       </>
     ),
   }];
