@@ -27,6 +27,7 @@
 .hero {
   position: relative;
   isolation: isolate;
+  overflow: clip;
   display: flex;
   min-height: clamp(350px, 46vw, 700px);
   align-items: center;
@@ -110,4 +111,81 @@
   @media (hover: hover) {
     .card:hover :is(.cover, .monogram) { transform: scale(1.06); }
   }
+}
+.intro { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro {
+    position: fixed;
+    z-index: 10;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #090609;
+    pointer-events: none;
+    animation: intro-out 1520ms ease-out both;
+  }
+
+  .root:focus-within .intro { display: none; }
+
+  .introLight {
+    position: absolute;
+    inset: -25%;
+    background: repeating-linear-gradient(90deg, transparent 0 3%, #ff395c22 3% 3.4%, transparent 3.4% 7%),
+      radial-gradient(ellipse at center, #e5094160 0%, #5e143c50 26%, transparent 58%);
+    transform-origin: center;
+    animation: intro-light 1500ms cubic-bezier(.22,.74,.2,1) both;
+  }
+
+  .introMark {
+    position: relative;
+    color: #ff253e;
+    font-size: clamp(70px, 24vmin, 250px);
+    font-weight: 900;
+    line-height: .9;
+    letter-spacing: -.08em;
+    text-shadow: 0 0 38px #ff174f68;
+    animation: intro-mark 1500ms cubic-bezier(.22,.74,.2,1) both;
+  }
+
+  .hero .backdrop { animation: backdrop-settle 1450ms cubic-bezier(.2,.75,.25,1) 660ms both; }
+  .heroContent > * { animation: cinema-rise 620ms cubic-bezier(.2,.75,.25,1) 960ms both; }
+  .heroContent > :nth-child(2) { animation-delay: 1030ms; }
+  .heroContent > :nth-child(3) { animation-delay: 1100ms; }
+  .heroContent > :nth-child(4) { animation-delay: 1170ms; }
+  .heroContent:focus-within > * { animation: none; }
+  .card { transition: box-shadow 220ms ease, background-color 220ms ease; }
+  .card:focus-within { background-color: #30252a; }
+
+  @media (hover: hover) {
+    .card:hover { background-color: #30252a; }
+  }
+}
+
+@keyframes intro-out {
+  0%, 73% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes intro-light {
+  0% { opacity: 0; transform: scaleX(.28) skewX(-16deg); }
+  46% { opacity: 1; }
+  100% { opacity: 0; transform: scaleX(2.6) skewX(10deg); }
+}
+
+@keyframes intro-mark {
+  0% { opacity: 0; transform: scale(.7) skewX(-9deg); }
+  26%, 60% { opacity: 1; transform: scale(1) skewX(-4deg); }
+  100% { opacity: 0; transform: scale(2.1) skewX(0); }
+}
+
+@keyframes backdrop-settle {
+  from { transform: scale(1.09); }
+  to { transform: scale(1); }
+}
+
+@keyframes cinema-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }

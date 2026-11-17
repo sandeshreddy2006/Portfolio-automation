@@ -51,11 +51,13 @@ export function Storefront({ content }: { content: PortfolioContent }) {
                   const href = safeHref(project.url);
                   return (
                     <li className={styles.card} key={index}>
-                      {safeImage(project.image) ? (
-                        <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
-                      ) : (
-                        <div className={styles.placeholder} aria-hidden="true">{initials(project.title)}</div>
-                      )}
+                      <div className={styles.productMedia}>
+                        {safeImage(project.image) ? (
+                          <UserImage src={project.image} framing={project.image_framing} alt="" className={styles.cover} />
+                        ) : (
+                          <div className={styles.placeholder} aria-hidden="true">{initials(project.title)}</div>
+                        )}
+                      </div>
                       <h3>{project.title}</h3>
                       {project.description && <p>{project.description}</p>}
                       {href && (

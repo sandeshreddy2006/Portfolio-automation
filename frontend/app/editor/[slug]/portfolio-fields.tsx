@@ -34,6 +34,11 @@ export default function PortfolioFields({ content, template, disabled, update }:
                 onChange={(event) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, url: event.target.value } : item) })} />
             </label>
             <ImageField label="Project image (optional)" kind="project" template={template} value={project.image}
+              hint={template === "cinema" && index === 0
+                ? "This image also becomes the Cinema backdrop. Leave it blank to use the default backdrop."
+                : template === "cinema" || template === "storefront"
+                  ? "Upload a cover image or leave it blank to show the project initials."
+                  : undefined}
               framing={project.image_framing} disabled={disabled}
               onChange={(url, framing) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, image: url, image_framing: framing } : item) })} />
             <div className={styles.rowActions}>

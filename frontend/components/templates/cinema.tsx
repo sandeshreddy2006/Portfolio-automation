@@ -11,6 +11,10 @@ export function Cinema({ content }: { content: PortfolioContent }) {
 
   return (
     <div className={styles.root} id="cinema-top">
+      <div className={styles.intro} aria-hidden="true">
+        <div className={styles.introLight} />
+        <span className={styles.introMark}>{initials(name)}</span>
+      </div>
       <header className={styles.header}>
         <a className={styles.brand} href="#cinema-top">{name}</a>
         <nav className={styles.nav} aria-label="Portfolio sections">
