@@ -43,6 +43,20 @@ def test_limit_of_five_per_user(client):
     assert create(other, slug="sams-site").status_code == 201
 
 
+def test_configured_admin_has_unlimited_slots_with_normal_ownership(client, monkeypatch):
+    monkeypatch.setenv("PORTFOLABS_ADMIN_EMAIL", " ADMIN@example.com ")
+    admin = login_as(make_user("admin@example.com"))
+    owner = login_as(make_user("owner@example.com"))
+
+    assert admin.get("/api/auth/session").json()["is_admin"] is True
+    assert owner.get("/api/auth/session").json()["is_admin"] is False
+    for number in range(6):
+        assert create(admin, slug=f"admin-{number}").status_code == 201
+    assert create(owner, slug="owners-site").status_code == 201
+    assert admin.get("/api/portfolios/owners-site").status_code == 404
+    assert len(admin.get("/api/portfolios").json()) == 6
+
+
 def test_other_users_cannot_touch_a_portfolio(client):
     owner = login_as(make_user())
     create(owner)

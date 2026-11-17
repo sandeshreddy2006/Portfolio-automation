@@ -1,5 +1,6 @@
 """SQLAlchemy models for editable and published portfolios."""
 
+import os
 from datetime import datetime
 from typing import Any
 
@@ -56,6 +57,11 @@ class User(Base):
     @property
     def google_connected(self) -> bool:
         return self.google_subject is not None
+
+    @property
+    def is_admin(self) -> bool:
+        admin_email = os.getenv("PORTFOLABS_ADMIN_EMAIL", "").strip().casefold()
+        return bool(admin_email) and self.email.casefold() == admin_email
 
 
 class Upload(Base):

@@ -156,6 +156,7 @@ class AccountDetails(BaseModel):
     name: str
     email: str
     google_connected: bool
+    is_admin: bool
 
 
 class GoogleIdentity(BaseModel):

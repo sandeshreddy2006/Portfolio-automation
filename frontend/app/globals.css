@@ -331,7 +331,8 @@ p, h1, h2, h3, figure, ol { margin: 0; }
 .account-menu-items button { cursor: pointer; }
 .account-menu-items a:hover, .account-menu-items button:hover { background: #e9efdc; }
 .account-menu-connected { color: var(--muted); }
-.account-menu-danger { color: #963326; }
+.account-menu-items button:disabled { cursor: wait; }
+.account-menu-error { padding: 6px 10px; color: #963326; font-size: 13px; }
 .profile-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .profile-details { display: grid; gap: 12px; margin: 22px 0 0; }
 .profile-details > div { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }

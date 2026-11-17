@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Account = { name: string; email: string; google_connected: boolean };
+type Account = { name: string; email: string; google_connected: boolean; is_admin?: boolean };
 
 export function useAccount(enabled = true) {
   const [account, setAccount] = useState<Account | null>();

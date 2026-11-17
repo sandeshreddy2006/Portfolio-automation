@@ -28,7 +28,7 @@ def notify_owner(slug: str, report: ReportCreate) -> None:
     try:
         deliver_account_email(
             recipient, f"Portfolabs report: /p/{slug}",
-            "<br>".join(html.escape(line) for line in lines), plain="\n".join(lines),
+            "<br>".join(html.escape(line).replace("\n", "<br>") for line in lines), plain="\n".join(lines),
         )
     except (OSError, KeyError, ValueError) as error:
         logger.warning("Report notification failed (%s)", type(error).__name__)

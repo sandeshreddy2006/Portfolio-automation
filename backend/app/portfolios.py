@@ -133,9 +133,10 @@ def create_portfolio(body: PortfolioCreate, request: Request, db: Database):
     document = validated_content(body.draft_content, user, db)
     check_new_address(db, body.slug, user)
 
-    count = db.scalar(select(func.count()).select_from(Portfolio).where(Portfolio.owner_id == user.id))
-    if count >= MAX_PORTFOLIOS:
-        raise HTTPException(409, f"You can have up to {MAX_PORTFOLIOS} portfolios.")
+    if not user.is_admin:
+        count = db.scalar(select(func.count()).select_from(Portfolio).where(Portfolio.owner_id == user.id))
+        if count >= MAX_PORTFOLIOS:
+            raise HTTPException(409, f"You can have up to {MAX_PORTFOLIOS} portfolios.")
 
     portfolio = Portfolio(
         owner_id=user.id, slug=body.slug, draft_content=document,

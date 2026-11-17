@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ApiError, profile } from "@/lib/api";
+import { ApiError, logout, profile } from "@/lib/api";
 import type { ProfileContent, ProfileDetails } from "@/lib/portfolio";
 import { applyResumeDetails, prepareProfile } from "@/lib/profile";
 import { AuthLink } from "../auth/auth-dialog";
@@ -105,10 +105,7 @@ export default function Profile() {
   async function signOut() {
     setError("");
     try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
-      });
-      if (!response.ok) throw new Error();
+      await logout();
       window.location.replace("/");
     } catch {
       setError("Couldn’t sign out. Please try again.");

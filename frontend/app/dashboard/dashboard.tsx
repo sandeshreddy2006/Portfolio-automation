@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AuthLink } from "../auth/auth-dialog";
+import { useAccount } from "../auth/use-account";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { templateInfo } from "@/components/templates/meta";
@@ -35,6 +36,7 @@ function status(item: PortfolioSummary) {
 
 export default function Dashboard() {
   const router = useRouter();
+  const isAdmin = useAccount()?.is_admin === true;
   const requested = useSearchParams().get("template");
   const wantedTemplate = templateInfo.find((template) => template.id === requested)?.id;
   const [copied, setCopied] = useState("");
@@ -72,7 +74,7 @@ export default function Dashboard() {
     return () => { active = false; };
   }, [state, creating]);
 
-  const full = items.length >= MAX_PORTFOLIOS;
+  const full = !isAdmin && items.length >= MAX_PORTFOLIOS;
 
   async function copyLink(slug: string) {
     try {
@@ -86,16 +88,26 @@ export default function Dashboard() {
 
   async function create(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setMessage("");
     try {
       const initial = { template_id: templateId, name: name.trim(), headline: "", bio: "", projects: [], links: [] };
       const content = useProfile && profileContent ? fillUsingProfile(initial, profileContent, useProfilePhoto)
         : useProfilePhoto && profileContent ? { ...initial, avatar: profileContent.avatar, avatar_framing: profileContent.avatar_framing } : initial;
-      await portfolios.create(slug, content);
-      router.push(`/editor/${slug}`);
+      const created = await portfolios.create(slug, content);
+      setItems((current) => [created, ...current.filter((item) => item.slug !== created.slug)]);
+      setCreating(false);
+      setName("");
+      setSlug("");
+      setSlugEdited(false);
+      setUseProfile(false);
+      setUseProfilePhoto(false);
+      setTemplateId(wantedTemplate ?? templateInfo[0].id);
+      router.push(`/editor/${created.slug}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Something went wrong.");
+    } finally {
       setBusy(false);
     }
   }
@@ -128,12 +140,21 @@ export default function Dashboard() {
       <div className={styles.titleRow}>
         <div>
           <h1 className={styles.title}>Your portfolios</h1>
-          <p className={styles.lead}>{items.length} of {MAX_PORTFOLIOS} portfolios used</p>
-          <div className={styles.meter} role="img" aria-label={`${items.length} of ${MAX_PORTFOLIOS} portfolios used`}>
-            {Array.from({ length: MAX_PORTFOLIOS }, (_, index) => <i key={index} data-on={index < items.length} />)}
-          </div>
+          {isAdmin ? (
+            <p className={styles.lead}>
+              <span className={`${styles.badge} ${styles.badgeLive}`}>Admin</span>{" "}
+              {items.length} {items.length === 1 ? "portfolio" : "portfolios"} · Unlimited
+            </p>
+          ) : (
+            <>
+              <p className={styles.lead}>{items.length} of {MAX_PORTFOLIOS} portfolios used</p>
+              <div className={styles.meter} role="img" aria-label={`${items.length} of ${MAX_PORTFOLIOS} portfolios used`}>
+                {Array.from({ length: MAX_PORTFOLIOS }, (_, index) => <i key={index} data-on={index < items.length} />)}
+              </div>
+            </>
+          )}
         </div>
-        <button type="button" className={styles.primary} disabled={full || state === "error"} onClick={() => setCreating((open) => !open)}>
+        <button type="button" className={styles.primary} disabled={busy || full || state === "error"} onClick={() => setCreating((open) => !open)}>
           {creating ? "Cancel" : "New portfolio"}
         </button>
       </div>

@@ -43,6 +43,14 @@ try {
   await page.waitForURL(`**/editor/${slug}`, { timeout: 20000 });
   check("creating a portfolio opens the editor", true);
 
+  await page.getByRole("link", { name: "All portfolios" }).click();
+  await page.waitForURL("**/dashboard");
+  await page.getByRole("button", { name: "New portfolio" }).waitFor();
+  await page.getByText(`/p/${slug}`).waitFor();
+  check("returning to portfolios clears the create form", !await page.getByLabel("Your name").isVisible());
+  await page.locator(`a[href="/editor/${slug}"]`).first().click();
+  await page.waitForURL(`**/editor/${slug}`);
+
   // Editor: fill in details
   await page.getByLabel("Headline").fill("Data scientist & tinkerer");
   await page.getByLabel("Bio").fill("I turn messy data into clear answers.\n\nCurrently learning Rust.");

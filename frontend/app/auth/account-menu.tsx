@@ -1,10 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { logout } from "@/lib/api";
 import { AuthLink } from "./auth-dialog";
 import { useAccount } from "./use-account";
 
 export function AccountMenu() {
+  const [signingOut, setSigningOut] = useState(false);
+  const [error, setError] = useState("");
+
+  async function signOut() {
+    setSigningOut(true);
+    setError("");
+    try {
+      await logout();
+      window.location.replace("/");
+    } catch {
+      setError("Couldn’t sign out. Please try again.");
+      setSigningOut(false);
+    }
+  }
+
   return (
     <details className="account-menu">
       <summary aria-label="Account menu">
@@ -16,7 +33,10 @@ export function AccountMenu() {
         <Link href="/dashboard">My portfolios</Link>
         <Link href="/profile">View profile</Link>
         <Link href="/cookies">Cookie settings</Link>
-        <AuthLink className="account-menu-danger" step="delete">Delete account</AuthLink>
+        <button type="button" onClick={() => void signOut()} disabled={signingOut}>
+          {signingOut ? "Signing out…" : "Sign out"}
+        </button>
+        {error && <p className="account-menu-error" role="alert">{error}</p>}
       </div>
     </details>
   );

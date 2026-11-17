@@ -35,6 +35,10 @@ async function call<T>(path: string, method = "GET", body?: unknown, base = "/ap
   return data as T;
 }
 
+export function logout(): Promise<void> {
+  return call<void>("/logout", "POST", {}, "/api/auth");
+}
+
 export async function uploadImage(file: File, kind: ImageKind): Promise<string> {
   const blob = await prepareImage(file, kind);
   let response: Response;
