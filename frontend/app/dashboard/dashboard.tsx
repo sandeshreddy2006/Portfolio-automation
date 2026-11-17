@@ -1,15 +1,27 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { AuthLink } from "../auth/auth-dialog";
 import { useAccount } from "../auth/use-account";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type PointerEvent } from "react";
 import { templateInfo } from "@/components/templates/meta";
 import { ApiError, portfolios, profile } from "@/lib/api";
 import { MAX_PORTFOLIOS, type PortfolioSummary, type ProfileContent } from "@/lib/portfolio";
 import { fillUsingProfile } from "@/lib/profile";
 import styles from "../studio.module.css";
+import dashboard from "./dashboard.module.css";
+
+const filters = ["All", "Live", "Drafts"] as const;
+type Filter = typeof filters[number];
+
+function tiltPreview(event: PointerEvent<HTMLAnchorElement>) {
+  if (event.pointerType !== "mouse" || !matchMedia("(prefers-reduced-motion: no-preference)").matches) return;
+  const bounds = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--tilt-x", `${(0.5 - (event.clientY - bounds.top) / bounds.height) * 9}deg`);
+  event.currentTarget.style.setProperty("--tilt-y", `${((event.clientX - bounds.left) / bounds.width - 0.5) * 12}deg`);
+}
 
 type State = "loading" | "signedout" | "ready" | "error";
 
@@ -41,6 +53,7 @@ export default function Dashboard() {
   const firstName = account?.name.trim().split(/\s+/)[0];
   const requested = useSearchParams().get("template");
   const wantedTemplate = templateInfo.find((template) => template.id === requested)?.id;
+  const [filter, setFilter] = useState<Filter>("All");
   const [copied, setCopied] = useState("");
   const [state, setState] = useState<State>("loading");
   const [items, setItems] = useState<PortfolioSummary[]>([]);
@@ -80,6 +93,8 @@ export default function Dashboard() {
   const liveCount = items.filter((item) => item.published).length;
   const latest = items.reduce<PortfolioSummary | undefined>((current, item) =>
     !current || item.updated_at > current.updated_at ? item : current, undefined);
+  const featured = templateInfo.find((template) => template.id === (latest?.template_id ?? wantedTemplate)) ?? templateInfo[0];
+  const visibleItems = items.filter((item) => filter === "All" || item.published === (filter === "Live"));
 
   async function copyLink(slug: string) {
     try {
@@ -103,6 +118,7 @@ export default function Dashboard() {
       const created = await portfolios.create(slug, content);
       setItems((current) => [created, ...current.filter((item) => item.slug !== created.slug)]);
       setCreating(false);
+      setFilter("All");
       setName("");
       setSlug("");
       setSlugEdited(false);
@@ -143,26 +159,70 @@ export default function Dashboard() {
   return (
     <main className={`page-width ${styles.page}`}>
       {state === "ready" && (
-        <section className={styles.welcome} aria-label="Workspace overview">
+        <section className={`landing hero ${dashboard.hero}`} aria-labelledby="workspace-title">
           <div>
-            <p className={styles.welcomeTitle}>{firstName ? `Welcome, ${firstName}.` : "Welcome to your workspace."}</p>
-            <div className={styles.welcomeLinks}>
-              {latest && <Link className={styles.primary} href={`/editor/${latest.slug}`}>Continue editing <span aria-hidden="true">↗</span></Link>}
-              <Link className={styles.secondary} href="/profile">Edit profile</Link>
-              <Link className={styles.secondary} href="/templates">Browse templates</Link>
+            <p className="eyebrow intro-label"><span aria-hidden="true" /> Your portfolio workspace</p>
+            <h1 id="workspace-title">
+              <span className="headline-line"><span>{firstName ? "Welcome," : "Make it"}</span></span>
+              <span className="headline-line"><span>{firstName ? `${firstName}.` : "yours."}</span></span>
+            </h1>
+            <p className="hero-description">
+              {latest ? <>Pick up where you left off with <strong>{latest.name}</strong>.</> : "Choose a design and give your best work a home."}
+            </p>
+            <div className="hero-actions">
+              {latest ? (
+                <Link className="primary-link" href={`/editor/${latest.slug}`}>Continue editing <span aria-hidden="true">↗</span></Link>
+              ) : (
+                <button type="button" className="primary-link" onClick={() => {
+                  setCreating(true);
+                  document.getElementById("dashboard-portfolios")?.scrollIntoView();
+                }}>Create a portfolio <span aria-hidden="true">↗</span></button>
+              )}
+              <Link className="source-link" href="/templates">Browse templates <span aria-hidden="true">↗</span></Link>
+              <Link className="source-link" href="/profile">Edit profile <span aria-hidden="true">↗</span></Link>
             </div>
           </div>
-          {items.length > 0 && (
-            <div className={styles.workspaceSummary}>
-              <p><strong>{liveCount}</strong> live <span aria-hidden="true">·</span> <strong>{items.length - liveCount}</strong> drafts</p>
-              {latest && <p>Last edited <strong>{latest.name}</strong></p>}
-            </div>
-          )}
+
+          <Link className={dashboard.showcaseLink} href={latest ? `/editor/${latest.slug}` : `/templates/${featured.id}`}
+            aria-label={latest ? `Open editor for ${latest.name}` : `Preview the ${featured.name} template`}
+            onPointerMove={tiltPreview} onPointerLeave={(event) => {
+              event.currentTarget.style.removeProperty("--tilt-x");
+              event.currentTarget.style.removeProperty("--tilt-y");
+            }}>
+            <figure className={`preview ${dashboard.showcase}`}>
+              <figcaption className="preview-caption">
+                <span>{latest ? "Last edited portfolio" : "Explore a template"}</span>
+                <span>{latest ? status(latest).label : featured.name}</span>
+              </figcaption>
+              <div className="preview-stage">
+                <div className="preview-orbit" aria-hidden="true" />
+                <div className="preview-orbit preview-orbit-inner" aria-hidden="true" />
+                <div className={dashboard.tilt}>
+                  <div className="preview-window">
+                    <div className="window-bar">
+                      <span className="window-dots" aria-hidden="true"><i /><i /><i /></span>
+                      <span>{featured.name} template preview</span>
+                    </div>
+                    <div className="preview-template">
+                      <Image src={`/designs/${featured.id}.webp`} alt="" width={960} height={675}
+                        sizes="(max-width: 750px) 80vw, 550px" fetchPriority="high" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className={dashboard.showcaseFooter}>
+                <span>{latest ? "Open editor" : "View template"}</span>
+                <span aria-hidden="true">↗</span>
+              </div>
+            </figure>
+          </Link>
         </section>
       )}
-      <div className={styles.titleRow}>
+      <div id="dashboard-portfolios" className={`${styles.titleRow} ${dashboard.portfoliosHeading}`}>
         <div>
-          <h1 className={styles.title}>Your portfolios</h1>
+          {state === "ready"
+            ? <h2 className={dashboard.sectionTitle}>Your portfolios</h2>
+            : <h1 className={dashboard.sectionTitle}>Your portfolios</h1>}
           {isAdmin ? (
             <p className={styles.lead}>
               <span className={`${styles.badge} ${styles.badgeLive}`}>Admin</span>{" "}
@@ -254,24 +314,37 @@ export default function Dashboard() {
         </div>
       )}
 
-      <ul className={styles.list}>
-        {items.map((item) => {
+      {items.length > 0 && (
+        <div className={dashboard.filters} role="group" aria-label="Filter portfolios">
+          {filters.map((option) => (
+            <button key={option} type="button" aria-pressed={filter === option} onClick={() => setFilter(option)}>
+              {option} <span>{option === "All" ? items.length : option === "Live" ? liveCount : items.length - liveCount}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {items.length > 0 && visibleItems.length === 0 && (
+        <p className={styles.note}>No {filter === "Live" ? "live portfolios" : "drafts"} yet.</p>
+      )}
+      <ul className={dashboard.cards}>
+        {visibleItems.map((item) => {
           const badge = status(item);
+          const design = templateInfo.find((entry) => entry.id === item.template_id);
           return (
-            <li key={item.slug} className={styles.card}>
-              <div className={styles.cardMain}>
-                <span className={styles.cardSwatch} aria-hidden="true"
-                  style={{ background: `linear-gradient(135deg, ${(templateInfo.find((entry) => entry.id === item.template_id)?.swatches ?? ["#ddd", "#bbb"]).join(", ")})` }}>
-                  {item.name.trim()[0]?.toUpperCase()}
-                </span>
-                <div>
-                  <h2>{item.name}</h2>
-                  <p className={styles.meta}>/p/{item.slug} · {templateInfo.find((entry) => entry.id === item.template_id)?.name ?? item.template_id}</p>
+            <li key={item.slug} className={dashboard.card}>
+              <Link className={dashboard.cardPreview} href={`/editor/${item.slug}`} aria-label={`Edit ${item.name}`}>
+                {design && <Image src={`/designs/${design.id}.webp`} alt="" width={960} height={675}
+                  sizes="(max-width: 700px) 90vw, (max-width: 1100px) 45vw, 360px" />}
+              </Link>
+              <div className={dashboard.cardInfo}>
+                <div className={dashboard.cardHeading}>
+                  <h3>{item.name}</h3>
                   <span className={`${styles.badge} ${badge.tone}`}>{badge.label}</span>
-                  <span className={styles.updated}> Edited {timeAgo(item.updated_at)}</span>
                 </div>
+                <p className={styles.meta}>/p/{item.slug} · {design?.name ?? item.template_id}</p>
+                <span className={styles.updated}>Edited {timeAgo(item.updated_at)}</span>
               </div>
-              <div className={styles.actions}>
+              <div className={`${styles.actions} ${dashboard.cardActions}`}>
                 <Link href={`/editor/${item.slug}`} className={styles.primary}>Edit</Link>
                 {item.published && <Link href={`/p/${item.slug}`} className={styles.secondary} target="_blank">View live</Link>}
                 {item.published && <button type="button" className={styles.secondary} onClick={() => copyLink(item.slug)}>{copied === item.slug ? "Copied!" : "Copy link"}</button>}
