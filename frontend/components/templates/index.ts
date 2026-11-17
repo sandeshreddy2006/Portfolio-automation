@@ -3,9 +3,11 @@ import type { PortfolioContent } from "@/lib/portfolio";
 import { Aurora } from "./aurora";
 import { Bento } from "./bento";
 import { Blocky } from "./blocky";
+import { Cinema } from "./cinema";
 import { Brutalist } from "./brutalist";
 import { Editorial } from "./editorial";
 import { templateInfo, type TemplateInfo } from "./meta";
+import { Storefront } from "./storefront";
 import { Terminal } from "./terminal";
 
 export type TemplateMeta = TemplateInfo & {
@@ -19,6 +21,8 @@ const components: Record<string, TemplateMeta["Component"]> = {
   brutalist: Brutalist,
   blocky: Blocky,
   aurora: Aurora,
+  storefront: Storefront,
+  cinema: Cinema,
 };
 
 export const templates: TemplateMeta[] = templateInfo.map((info) => ({

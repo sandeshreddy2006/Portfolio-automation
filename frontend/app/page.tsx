@@ -115,7 +115,7 @@ export default function Home() {
         <section id="designs" tabIndex={-1} className="section" aria-labelledby="designs-title">
           <div className="section-heading">
             <h2 id="designs-title">Portfolio designs</h2>
-            <p>Explore six templates, from editorial to playful. Open any design to see a full preview.</p>
+            <p>Explore {templateInfo.length} templates. Open any design to see a full preview.</p>
           </div>
           <ul className="design-grid">
             {templateInfo.map((template) => (

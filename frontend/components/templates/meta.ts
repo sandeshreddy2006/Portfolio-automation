@@ -50,4 +50,18 @@ export const templateInfo: TemplateInfo[] = [
     bestFor: "Product, AI and startup people who want a modern, polished feel.",
     swatches: ["#07060f", "#6d3bff", "#22d3ee"],
   },
+  {
+    id: "storefront",
+    name: "Storefront",
+    tagline: "An Amazon-inspired storefront with a product-grid layout.",
+    bestFor: "Designers, makers and people with a catalogue of projects.",
+    swatches: ["#131921", "#ffbf69", "#e8ecec"],
+  },
+  {
+    id: "cinema",
+    name: "Cinema",
+    tagline: "A Netflix-inspired layout with a featured project and a scrollable shelf.",
+    bestFor: "Filmmakers, game developers and anyone with strong project visuals.",
+    swatches: ["#141414", "#ff3340", "#601b30"],
+  },
 ];
