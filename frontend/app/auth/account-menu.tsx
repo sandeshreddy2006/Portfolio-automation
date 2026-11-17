@@ -32,7 +32,7 @@ export function AccountMenu() {
       <div className="account-menu-items">
         <Link href="/dashboard">My portfolios</Link>
         <Link href="/profile">View profile</Link>
-        <Link href="/cookies">Cookie settings</Link>
+        <Link href="/settings">Settings</Link>
         <button type="button" onClick={() => void signOut()} disabled={signingOut}>
           {signingOut ? "Signing out…" : "Sign out"}
         </button>

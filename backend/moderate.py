@@ -40,7 +40,8 @@ def main(arguments: list[str]) -> int:
     if arguments[:1] == ["reports"]:
         with SessionLocal() as db:
             for report in db.scalars(select(Report).order_by(Report.id.desc()).limit(50)):
-                print(f"#{report.id} {report.created_at:%Y-%m-%d %H:%M} /p/{report.slug} [{report.reason}] {report.contact or '-'}")
+                target = "Portfolabs app" if report.reason == "bug" else f"/p/{report.slug}"
+                print(f"#{report.id} {report.created_at:%Y-%m-%d %H:%M} {target} [{report.reason}] {report.contact or '-'}")
                 if report.details:
                     print(f"    {report.details}")
         return 0

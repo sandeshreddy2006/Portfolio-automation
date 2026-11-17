@@ -73,6 +73,20 @@ def test_reports_are_validated_and_rate_limited(client):
     assert statuses == [201, 201, 201, 201, 429]
 
 
+def test_signed_in_bug_reports_are_saved_and_rate_limited(client, monkeypatch):
+    sent = []
+    monkeypatch.setattr(reports, "notify_owner", lambda *args: sent.append(args))
+    assert client.post("/api/report/bug", json={"details": "Editor froze"}).status_code == 401
+    owner = login_as(make_user())
+    assert owner.post("/api/report/bug", json={"details": " "}).status_code == 422
+    statuses = [owner.post("/api/report/bug", json={"details": "Editor froze"}).status_code for _ in range(6)]
+    assert statuses == [201, 201, 201, 201, 201, 429]
+    with SessionLocal() as db:
+        saved = db.scalars(select(Report)).all()
+    assert len(saved) == len(sent) == 5
+    assert all(report.reason == "bug" and report.details == "Editor froze" for report in saved)
+
+
 def test_report_email_escapes_visitor_text(monkeypatch):
     captured = {}
     monkeypatch.setenv("REPORT_EMAIL", "owner@example.com")

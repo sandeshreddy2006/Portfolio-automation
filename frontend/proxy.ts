@@ -4,7 +4,7 @@ import { authCookieHeader, authHeaders } from "./app/api/auth/backend";
 
 const RESERVED = new Set(["www", "api", "app", "assets", "mail", "admin", "auth", "dashboard", "editor"]);
 const SLUG = /^[a-z0-9-]{3,64}$/;
-const PUBLIC_FILE = /^\/(?:_next\/static\/|media\/|icon\.svg$|apple-icon\.png$|favicon\.ico$)/;
+const PUBLIC_FILE = /^\/(?:_next\/static\/|media\/|icon\.svg$|apple-icon\.png$|brand\/envelope-cursor\.svg$|favicon\.ico$)/;
 
 function missing(status = 404) {
   return new NextResponse(status === 404 ? "Portfolio not found." : "Portfolio temporarily unavailable.", {

@@ -14,7 +14,7 @@ const legalLinks = [
   { href: "/docs/vercel", label: "Vercel Guide" },
 ];
 
-export default function LegalPage({ title, updated, current, children }: { title: string; updated: string; current?: string; children: ReactNode }) {
+export default function LegalPage({ title, updated, current, children }: { title: string; updated?: string; current?: string; children: ReactNode }) {
   return (
     <main className={`page-width legal-page ${styles.page}`}>
       <Link className="brand-link" href="/" aria-label="Portfolabs home"><Brand compact /></Link>
@@ -25,7 +25,7 @@ export default function LegalPage({ title, updated, current, children }: { title
       </nav>
       <article className={styles.article}>
         <h1>{title}</h1>
-        <p className={styles.updated}>Last updated {updated}</p>
+        {updated && <p className={styles.updated}>Last updated {updated}</p>}
         {children}
       </article>
     </main>

@@ -522,9 +522,6 @@ article .cookie-panel { margin-top: 24px; }
 
 @media (hover: hover) and (pointer: fine) and (forced-colors: none) {
   html { scrollbar-width: thin; scrollbar-color: #84946e var(--paper); }
-  :is(.landing, .account-page, .legal-page) :is(a, button:not(:disabled), summary) {
-    cursor: url("/brand/envelope-cursor.svg") 3 3, pointer;
-  }
 }
 
 .auth-dialog {
@@ -581,3 +578,20 @@ article .cookie-panel { margin-top: 24px; }
   outline-offset: 1px;
   background: #eef3dd;
 }
+
+@media (hover: hover) and (pointer: fine) and (forced-colors: none) {
+  html, body, :is(a, button:not(:disabled), summary, select, label) {
+    cursor: url("/brand/envelope-cursor.svg") 3 3, auto !important;
+  }
+  :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"]), textarea, [contenteditable="true"]) {
+    cursor: text;
+  }
+}
+
+.platform-credits {
+  padding-block: 15px 25px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+body:has([data-portfolio-export]) .platform-credits { display: none; }

@@ -54,38 +54,6 @@
 
 .sectionTitle { font-size: clamp(32px, 5vw, 55px); font-weight: 760; line-height: 1; letter-spacing: -.075em; }
 
-.filters {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 21px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #eeefe4;
-}
-
-.filters button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 12px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.filters button:hover { background: #fffef7; }
-.filters button[aria-pressed="true"] {
-  border-color: #b7c393;
-  background: #e6f6bd;
-  color: #294321;
-}
-
-.filters button span { color: var(--muted); font: 600 11px/1 var(--mono); }
-
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 305px), 1fr));
@@ -147,3 +115,46 @@
   from { opacity: 0; transform: translateY(11px); }
   to { opacity: 1; transform: none; }
 }
+
+.namePreview { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.namePreview iframe {
+  display: block;
+  width: 960px;
+  max-width: none;
+  height: 675px;
+  border: 0;
+  transform: scale(var(--preview-scale, 0));
+  transform-origin: top left;
+  background: #eef3e4;
+}
+.showcase :global(.preview-template) { position: relative; }
+.showcase .namePreview { filter: grayscale(1); mix-blend-mode: multiply; }
+.previewStatus { display: inline-flex; align-items: center; gap: 7px; text-transform: none; font: 600 12px/1.4 Arial, sans-serif; }
+.previewStatus[data-live]::before { width: 6px; height: 6px; border-radius: 50%; background: #daf977; box-shadow: 0 0 8px #daf97764; content: ""; }
+
+.filters {
+  display: flex;
+  width: fit-content;
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.filters button {
+  padding: 9px 1px;
+  font-size: 14px;
+  font-weight: 650;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--muted);
+}
+.filters button span { color: var(--muted); font: 600 11px/1 var(--mono); }
+.filters button:is(:hover, [aria-pressed="true"]) { background: transparent; color: var(--ink); }
+.filters button[aria-pressed="true"] { border-bottom-color: #56733b; }
+
+.cardStatus { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 650; }
+.cardStatus::before { width: 6px; height: 6px; border-radius: 50%; background: #abae9f; content: ""; }
+.cardStatus[data-live]::before { background: #56833a; }

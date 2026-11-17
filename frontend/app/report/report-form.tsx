@@ -11,7 +11,7 @@ const reasons = [
   ["other", "Something else"],
 ] as const;
 
-export default function ReportForm({ slug }: { slug: string }) {
+export default function ReportForm({ slug }: { slug?: string }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +25,7 @@ export default function ReportForm({ slug }: { slug: string }) {
       const response = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, reason: data.reason, details: data.details ?? "", contact: data.contact || null }),
+        body: JSON.stringify({ ...(slug ? { slug, reason: data.reason } : { kind: "bug" }), details: data.details ?? "", contact: data.contact || null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) {
@@ -40,24 +40,28 @@ export default function ReportForm({ slug }: { slug: string }) {
     }
   }
 
-  if (done) return <p className={styles.success} role="status">Thank you. We’ve received your report for /p/{slug}.</p>;
+  if (done) return <p className={styles.success} role="status">Thank you. We’ve received your {slug ? `report for /p/${slug}` : "bug report"}.</p>;
 
   return (
     <form className={styles.form} onSubmit={submit}>
-      <p>You’re reporting <strong>/p/{slug}</strong>.</p>
-      <label>What’s the problem?
-        <select name="reason" required defaultValue="">
-          <option value="" disabled>Choose one</option>
-          {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
-      </label>
-      <label>Details (optional)
-        <textarea name="details" rows={5} maxLength={1000} />
+      {slug && (
+        <>
+          <p>You’re reporting <strong>/p/{slug}</strong>.</p>
+          <label>What’s the problem?
+            <select name="reason" required defaultValue="">
+              <option value="" disabled>Choose one</option>
+              {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+        </>
+      )}
+      <label>{slug ? "Details (optional)" : "What happened?"}
+        <textarea name="details" rows={5} maxLength={1000} required={!slug} />
         <small>Up to 1,000 characters.</small>
       </label>
       <label>Your email (optional)
         <input name="contact" type="email" autoComplete="email" />
-        <small>Only if you’d like us to follow up. We won’t share it with the portfolio owner.</small>
+        <small>Only if you’d like us to follow up.{slug ? " We won’t share it with the portfolio owner." : ""}</small>
       </label>
       {error && <p className={styles.error} role="alert">{error}</p>}
       <button type="submit" className={styles.submit} disabled={busy}>{busy ? "Sending…" : "Send report"}</button>

@@ -12,6 +12,8 @@ import { MAX_PORTFOLIOS, type PortfolioSummary, type ProfileContent } from "@/li
 import { fillUsingProfile } from "@/lib/profile";
 import styles from "../studio.module.css";
 import dashboard from "./dashboard.module.css";
+import DashboardPreview from "./dashboard-preview";
+import HomeSections from "../home-sections";
 
 const filters = ["All", "Live", "Drafts"] as const;
 type Filter = typeof filters[number];
@@ -41,16 +43,17 @@ function timeAgo(value: string) {
 }
 
 function status(item: PortfolioSummary) {
-  if (!item.published) return { label: "Draft", tone: styles.badgeDraft };
-  if (item.has_unpublished_changes) return { label: "Unpublished changes", tone: styles.badgeChanged };
-  return { label: "Live", tone: styles.badgeLive };
+  if (!item.published) return "Draft";
+  if (item.has_unpublished_changes) return "Unpublished changes";
+  return "Live";
 }
 
 export default function Dashboard() {
   const router = useRouter();
   const account = useAccount();
   const isAdmin = account?.is_admin === true;
-  const firstName = account?.name.trim().split(/\s+/)[0];
+  const displayName = account?.name?.trim() || account?.email?.split("@")[0];
+  const firstName = displayName?.split(/\s+/)[0];
   const requested = useSearchParams().get("template");
   const wantedTemplate = templateInfo.find((template) => template.id === requested)?.id;
   const [filter, setFilter] = useState<Filter>("All");
@@ -192,7 +195,7 @@ export default function Dashboard() {
             <figure className={`preview ${dashboard.showcase}`}>
               <figcaption className="preview-caption">
                 <span>{latest ? "Last edited portfolio" : "Explore a template"}</span>
-                <span>{latest ? status(latest).label : featured.name}</span>
+                <span className={dashboard.previewStatus} data-live={latest?.published || undefined}>{latest ? status(latest) : featured.name}</span>
               </figcaption>
               <div className="preview-stage">
                 <div className="preview-orbit" aria-hidden="true" />
@@ -204,8 +207,12 @@ export default function Dashboard() {
                       <span>{featured.name} template preview</span>
                     </div>
                     <div className="preview-template">
-                      <Image src={`/designs/${featured.id}.webp`} alt="" width={960} height={675}
-                        sizes="(max-width: 750px) 80vw, 550px" fetchPriority="high" />
+                      {latest || displayName ? (
+                        <DashboardPreview template={featured.id} name={latest?.name.trim() || displayName || featured.name} eager />
+                      ) : (
+                        <Image src={`/designs/${featured.id}.webp`} alt="" width={960} height={675}
+                          sizes="(max-width: 750px) 80vw, 550px" fetchPriority="high" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -333,13 +340,12 @@ export default function Dashboard() {
           return (
             <li key={item.slug} className={dashboard.card}>
               <Link className={dashboard.cardPreview} href={`/editor/${item.slug}`} aria-label={`Edit ${item.name}`}>
-                {design && <Image src={`/designs/${design.id}.webp`} alt="" width={960} height={675}
-                  sizes="(max-width: 700px) 90vw, (max-width: 1100px) 45vw, 360px" />}
+                {design && <DashboardPreview template={design.id} name={item.name.trim() || displayName || design.name} />}
               </Link>
               <div className={dashboard.cardInfo}>
                 <div className={dashboard.cardHeading}>
                   <h3>{item.name}</h3>
-                  <span className={`${styles.badge} ${badge.tone}`}>{badge.label}</span>
+                  <span className={dashboard.cardStatus} data-live={item.published || undefined}>{badge}</span>
                 </div>
                 <p className={styles.meta}>/p/{item.slug} · {design?.name ?? item.template_id}</p>
                 <span className={styles.updated}>Edited {timeAgo(item.updated_at)}</span>
@@ -354,6 +360,7 @@ export default function Dashboard() {
           );
         })}
       </ul>
+      {state === "ready" && <HomeSections />}
     </main>
   );
 }

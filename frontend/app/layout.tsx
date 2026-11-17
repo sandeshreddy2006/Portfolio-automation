@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SiteCredits from "./site-credits";
 import { AuthDialogProvider } from "./auth/auth-dialog";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body><AuthDialogProvider>{children}</AuthDialogProvider></body>
+      <body><AuthDialogProvider>{children}<SiteCredits /></AuthDialogProvider></body>
     </html>
   );
 }

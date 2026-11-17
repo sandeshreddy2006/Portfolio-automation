@@ -171,6 +171,11 @@ class ReportCreate(BaseModel):
     contact: EmailStr | None = None
 
 
+class BugReportCreate(BaseModel):
+    details: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    contact: EmailStr | None = None
+
+
 class AssistRequest(BaseModel):
     task: Literal["headline", "bio", "project"]
     text: str = Field(min_length=1, max_length=4000)

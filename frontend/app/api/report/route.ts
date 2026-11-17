@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { backendUrl } from "@/lib/backend";
-import { authHeaders } from "../auth/backend";
+import { authCookieHeader, authHeaders } from "../auth/backend";
 import { SLUG } from "@/lib/published";
 
 function reply(detail: string, status: number) {
@@ -13,20 +13,24 @@ export async function POST(request: NextRequest) {
   const text = await request.text();
   if (text.length > 8 * 1024) return reply("Request is too large.", 413);
 
-  let payload: { slug?: unknown; reason?: unknown; details?: unknown; contact?: unknown };
+  let payload: { kind?: unknown; slug?: unknown; reason?: unknown; details?: unknown; contact?: unknown };
   try {
     payload = JSON.parse(text);
   } catch {
     return reply("Expected a JSON request.", 415);
   }
-  const { slug, ...report } = payload;
-  if (typeof slug !== "string" || slug.length > 64 || !SLUG.test(slug)) return reply("Portfolio not found.", 404);
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return reply("Expected a JSON object.", 415);
+  const { kind, slug, ...report } = payload;
+  const bug = kind === "bug";
+  const cookie = bug ? authCookieHeader(request) : "";
+  if (bug && !cookie) return reply("Sign in to report a bug.", 401);
+  if (!bug && (typeof slug !== "string" || slug.length > 64 || !SLUG.test(slug))) return reply("Portfolio not found.", 404);
 
-  const url = backendUrl(`/api/public/${slug}/report`);
+  const url = backendUrl(bug ? "/api/report/bug" : `/api/public/${slug}/report`);
   if (!url) return reply("Reporting isn’t available right now.", 503);
   try {
     const upstream = await fetch(url, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(report),
+      method: "POST", headers: { "Content-Type": "application/json", ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify(report),
       cache: "no-store", signal: AbortSignal.timeout(15_000),
     });
     return new Response(upstream.body, {

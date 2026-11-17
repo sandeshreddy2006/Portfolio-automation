@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { getTemplate } from "@/components/templates";
 import { getPublished, getRedirectTarget, SITE_URL, SLUG } from "@/lib/published";
 import styles from "./public.module.css";
+import { Credits } from "../../site-credits";
 
 export async function generateMetadata({ params }: PageProps<"/p/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -53,6 +54,7 @@ async function Portfolio({ params }: { params: PageProps<"/p/[slug]">["params"] 
         <span aria-hidden="true">·</span>
         <Link href={`${SITE_URL}/report?slug=${slug}`} rel="nofollow">Report</Link>
       </footer>
+      <footer className={styles.credits}><Credits /></footer>
     </div>
   );
 }

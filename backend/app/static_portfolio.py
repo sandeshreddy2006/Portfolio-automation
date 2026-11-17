@@ -158,12 +158,15 @@ def export_files(slug: str, user_id: int, content: dict, published_at: datetime)
         def copy_asset(match):
             referenced = match[2].strip()
             parsed = urlsplit(urljoin(path, referenced))
-            if parsed.scheme or parsed.netloc or not static_path(parsed.path):
+            if parsed.scheme or parsed.netloc or (
+                parsed.path != "/brand/envelope-cursor.svg" and not static_path(parsed.path)
+            ):
                 return match[0]
             resolved = parsed.path
-            if export_path(resolved).lstrip("/") not in files:
-                add(export_path(resolved), fetch_asset(resolved, 4 * 1024 * 1024))
-            return f'url("{export_path(resolved)}")'
+            destination = resolved if resolved == "/brand/envelope-cursor.svg" else export_path(resolved)
+            if destination.lstrip("/") not in files:
+                add(destination, fetch_asset(resolved, 4 * 1024 * 1024))
+            return f'url("{destination}")'
 
         add(export_path(path), CSS_URL.sub(copy_asset, css).encode())
 
