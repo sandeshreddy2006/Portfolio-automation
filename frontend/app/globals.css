@@ -392,8 +392,7 @@ p, h1, h2, h3, figure, ol { margin: 0; }
 
 @media (max-width: 640px) {
   /* The designs become a swipeable strip so six large previews don't make a very long page. */
-  .design-grid { display: flex; gap: 14px; margin-inline: -18px; padding: 4px 18px 18px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
-  .design-grid::-webkit-scrollbar { display: none; }
+  .design-grid { display: flex; gap: 14px; margin-inline: -18px; padding: 4px 18px 18px; overflow-x: auto; scroll-snap-type: x mandatory; }
   .design-grid li { flex: 0 0 78%; scroll-snap-align: center; }
   .feature-grid { grid-template-columns: 1fr; }
   .site-header nav { gap: 12px; }
@@ -520,8 +519,24 @@ article .cookie-panel { margin-top: 24px; }
 .account-form .account-terms input { flex: none; width: 16px; height: 16px; margin-top: 2px; accent-color: #55763a; }
 .account-terms a { text-decoration: underline; text-underline-offset: 3px; }
 
-@media (hover: hover) and (pointer: fine) and (forced-colors: none) {
-  html { scrollbar-width: thin; scrollbar-color: #84946e var(--paper); }
+@media (forced-colors: none) {
+  :root {
+    --scrollbar-thumb: #84946e;
+    --scrollbar-track: var(--paper);
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  * { scrollbar-width: thin; }
+
+  @supports not (scrollbar-width: thin) {
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+    ::-webkit-scrollbar-thumb {
+      border: 2px solid var(--scrollbar-track);
+      border-radius: 999px;
+      background: var(--scrollbar-thumb);
+    }
+  }
 }
 
 .auth-dialog {
@@ -580,11 +595,8 @@ article .cookie-panel { margin-top: 24px; }
 }
 
 @media (hover: hover) and (pointer: fine) and (forced-colors: none) {
-  html, body, :is(a, button:not(:disabled), summary, select, label) {
-    cursor: url("/brand/envelope-cursor.svg") 3 3, auto !important;
-  }
-  :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"]), textarea, [contenteditable="true"]) {
-    cursor: text;
+  :is(a[href], button:enabled, summary, select:enabled, input:is([type="checkbox"], [type="radio"], [type="button"], [type="submit"]):enabled):hover:not(:active) {
+    cursor: url("/brand/envelope-cursor.svg") 3 3, pointer;
   }
 }
 

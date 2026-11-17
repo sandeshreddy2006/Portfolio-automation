@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AuthLink } from "../auth/auth-dialog";
 import { useAccount } from "../auth/use-account";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from "react";
 import { templateInfo } from "@/components/templates/meta";
 import { ApiError, portfolios, profile } from "@/lib/api";
 import { MAX_PORTFOLIOS, type PortfolioSummary, type ProfileContent } from "@/lib/portfolio";
@@ -17,6 +17,34 @@ import HomeSections from "../home-sections";
 
 const filters = ["All", "Live", "Drafts"] as const;
 type Filter = typeof filters[number];
+
+const shortcutPaths = {
+  edit: "M4 20l4.5-1 10-10-3.5-3.5-10 10L4 20Zm9.5-13 3.5 3.5M17 4l1-1 3.5 3.5-1 1",
+  templates: "M3.5 4.5h7v7h-7zM13.5 4.5h7v4h-7zM3.5 14.5h7v5h-7zM13.5 11.5h7v8h-7z",
+  profile: "M5 4.5h14v15H5zM9 4.5v-2m6 2v-2M9 16c0-1.7 1.4-3 3-3s3 1.3 3 3m-1-6a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z",
+  add: "M5 4h10l4 4v12H5zM15 4v4h4m-11 6h8m-4-4v8",
+  admin: "M12 2.5 19 5v5.5c0 4.7-2.9 7.7-7 10.5-4.1-2.8-7-5.8-7-10.5V5l7-2.5Zm0 5v6m-3-3h6",
+} as const;
+
+function ShortcutIcon({ kind }: { kind: keyof typeof shortcutPaths }) {
+  return (
+    <span className={dashboard.shortcutIcon} data-kind={kind} aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d={shortcutPaths[kind]} />
+      </svg>
+    </span>
+  );
+}
+
+function PortfolioSignal({ item, showcase = false }: { item: PortfolioSummary; showcase?: boolean }) {
+  const mode = !item.published ? "draft" : item.has_unpublished_changes ? "pending" : "live";
+  return (
+    <span className={`${dashboard.signal} ${showcase ? dashboard.showcaseSignal : ""}`} data-status={mode}>
+      {mode === "live" && <span className={dashboard.airwaves} aria-hidden="true"><i /><i /><i /></span>}
+      {status(item)}
+    </span>
+  );
+}
 
 function tiltPreview(event: PointerEvent<HTMLAnchorElement>) {
   if (event.pointerType !== "mouse" || !matchMedia("(prefers-reduced-motion: no-preference)").matches) return;
@@ -61,6 +89,10 @@ export default function Dashboard() {
   const [state, setState] = useState<State>("loading");
   const [items, setItems] = useState<PortfolioSummary[]>([]);
   const [message, setMessage] = useState("");
+  const deleteDialog = useRef<HTMLDialogElement>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PortfolioSummary>();
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   // Arriving from a template page ("Use this template") opens the form with that design already chosen.
   const [creating, setCreating] = useState(wantedTemplate !== undefined);
   const [busy, setBusy] = useState(false);
@@ -91,6 +123,11 @@ export default function Dashboard() {
     profile.get().then(({ content }) => { if (active) setProfileContent(content); }).catch(() => {});
     return () => { active = false; };
   }, [state, creating]);
+
+  useEffect(() => {
+    const dialog = deleteDialog.current;
+    if (deleteTarget && dialog && !dialog.open) dialog.showModal();
+  }, [deleteTarget]);
 
   const full = !isAdmin && items.length >= MAX_PORTFOLIOS;
   const liveCount = items.filter((item) => item.published).length;
@@ -136,14 +173,21 @@ export default function Dashboard() {
     }
   }
 
-  async function remove(item: PortfolioSummary) {
-    if (!window.confirm(`Delete “${item.name}” (/p/${item.slug})? This can’t be undone.`)) return;
+  async function remove(event: FormEvent) {
+    event.preventDefault();
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
     try {
-      await portfolios.remove(item.slug);
-      setItems((current) => current.filter((entry) => entry.slug !== item.slug));
+      await portfolios.remove(deleteTarget.slug);
+      deleteDialog.current?.close();
+      setItems((current) => current.filter((entry) => entry.slug !== deleteTarget.slug));
       setMessage("");
+      document.getElementById("dashboard-portfolios")?.focus();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Something went wrong.");
+      setDeleteError(error instanceof Error ? error.message : "Couldn’t delete this portfolio. Please try again.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -174,15 +218,15 @@ export default function Dashboard() {
             </p>
             <div className="hero-actions">
               {latest ? (
-                <Link className="primary-link" href={`/editor/${latest.slug}`}>Continue editing <span aria-hidden="true">↗</span></Link>
+                <Link className={`primary-link ${dashboard.shortcut} ${dashboard.shortcutPrimary}`} href={`/editor/${latest.slug}`}><ShortcutIcon kind="edit" /> Continue editing</Link>
               ) : (
-                <button type="button" className="primary-link" onClick={() => {
+                <button type="button" className={`primary-link ${dashboard.shortcut} ${dashboard.shortcutPrimary}`} onClick={() => {
                   setCreating(true);
                   document.getElementById("dashboard-portfolios")?.scrollIntoView();
-                }}>Create a portfolio <span aria-hidden="true">↗</span></button>
+                }}><ShortcutIcon kind="add" /> Create a portfolio</button>
               )}
-              <Link className="source-link" href="/templates">Browse templates <span aria-hidden="true">↗</span></Link>
-              <Link className="source-link" href="/profile">Edit profile <span aria-hidden="true">↗</span></Link>
+              <Link className={dashboard.shortcut} href="/templates"><ShortcutIcon kind="templates" /> Browse templates</Link>
+              <Link className={dashboard.shortcut} href="/profile"><ShortcutIcon kind="profile" /> Edit profile</Link>
             </div>
           </div>
 
@@ -195,7 +239,7 @@ export default function Dashboard() {
             <figure className={`preview ${dashboard.showcase}`}>
               <figcaption className="preview-caption">
                 <span>{latest ? "Last edited portfolio" : "Explore a template"}</span>
-                <span className={dashboard.previewStatus} data-live={latest?.published || undefined}>{latest ? status(latest) : featured.name}</span>
+                {latest ? <PortfolioSignal item={latest} showcase /> : <span>{featured.name}</span>}
               </figcaption>
               <div className="preview-stage">
                 <div className="preview-orbit" aria-hidden="true" />
@@ -219,20 +263,20 @@ export default function Dashboard() {
               </div>
               <div className={dashboard.showcaseFooter}>
                 <span>{latest ? "Open editor" : "View template"}</span>
-                <span aria-hidden="true">↗</span>
+                <ShortcutIcon kind={latest ? "edit" : "templates"} />
               </div>
             </figure>
           </Link>
         </section>
       )}
-      <div id="dashboard-portfolios" className={`${styles.titleRow} ${dashboard.portfoliosHeading}`}>
+      <div id="dashboard-portfolios" tabIndex={-1} className={`${styles.titleRow} ${dashboard.portfoliosHeading}`}>
         <div>
           {state === "ready"
             ? <h2 className={dashboard.sectionTitle}>Your portfolios</h2>
             : <h1 className={dashboard.sectionTitle}>Your portfolios</h1>}
           {isAdmin ? (
             <p className={styles.lead}>
-              <span className={`${styles.badge} ${styles.badgeLive}`}>Admin</span>{" "}
+              <span className={dashboard.adminPass}><ShortcutIcon kind="admin" /> Admin</span>{" "}
               {items.length} {items.length === 1 ? "portfolio" : "portfolios"} · Unlimited
             </p>
           ) : (
@@ -335,7 +379,6 @@ export default function Dashboard() {
       )}
       <ul className={dashboard.cards}>
         {visibleItems.map((item) => {
-          const badge = status(item);
           const design = templateInfo.find((entry) => entry.id === item.template_id);
           return (
             <li key={item.slug} className={dashboard.card}>
@@ -345,7 +388,7 @@ export default function Dashboard() {
               <div className={dashboard.cardInfo}>
                 <div className={dashboard.cardHeading}>
                   <h3>{item.name}</h3>
-                  <span className={dashboard.cardStatus} data-live={item.published || undefined}>{badge}</span>
+                  <PortfolioSignal item={item} />
                 </div>
                 <p className={styles.meta}>/p/{item.slug} · {design?.name ?? item.template_id}</p>
                 <span className={styles.updated}>Edited {timeAgo(item.updated_at)}</span>
@@ -354,12 +397,41 @@ export default function Dashboard() {
                 <Link href={`/editor/${item.slug}`} className={styles.primary}>Edit</Link>
                 {item.published && <Link href={`/p/${item.slug}`} className={styles.secondary} target="_blank">View live</Link>}
                 {item.published && <button type="button" className={styles.secondary} onClick={() => copyLink(item.slug)}>{copied === item.slug ? "Copied!" : "Copy link"}</button>}
-                <button type="button" className={styles.danger} onClick={() => remove(item)}>Delete</button>
+                <button type="button" className={styles.danger} onClick={() => {
+                  setDeleteError("");
+                  setDeleteTarget(item);
+                }}>Delete</button>
               </div>
             </li>
           );
         })}
       </ul>
+      {deleteTarget && (
+        <dialog ref={deleteDialog} className="auth-dialog" aria-labelledby="delete-portfolio-title"
+          aria-describedby="delete-portfolio-description" onClose={() => setDeleteTarget(undefined)}
+          onCancel={(event) => { if (deleting) event.preventDefault(); }}>
+          <form className={`auth-dialog-content ${dashboard.deleteDialog}`} onSubmit={remove}>
+            <span className={dashboard.deleteIcon} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5m4-5v5" />
+              </svg>
+            </span>
+            <h2 id="delete-portfolio-title">Delete portfolio?</h2>
+            <p id="delete-portfolio-description">
+              <strong>{deleteTarget.name}</strong> will be permanently deleted.
+              {deleteTarget.published && " Its public link will stop working."}
+            </p>
+            <p className={dashboard.deleteAddress}>/p/{deleteTarget.slug}</p>
+            {deleteError && <p className={styles.error} role="alert">{deleteError}</p>}
+            <div className={`${styles.actions} ${dashboard.deleteActions}`}>
+              <button type="button" className={styles.secondary} disabled={deleting} onClick={() => deleteDialog.current?.close()}>Cancel</button>
+              <button type="submit" className={`${styles.danger} ${dashboard.deleteConfirm}`} disabled={deleting}>
+                {deleting ? "Deleting…" : "Delete portfolio"}
+              </button>
+            </div>
+          </form>
+        </dialog>
+      )}
       {state === "ready" && <HomeSections />}
     </main>
   );

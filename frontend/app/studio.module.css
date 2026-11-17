@@ -157,8 +157,7 @@
 .empty svg { margin-bottom: 8px; }
 .empty .primary { margin-top: 18px; }
 /* Editor section shortcuts */
-.sectionNav { position: sticky; top: 0; z-index: 6; display: flex; gap: 6px; padding: 8px 0 10px; overflow-x: auto; background: linear-gradient(var(--paper) 80%, transparent); scrollbar-width: none; }
-.sectionNav::-webkit-scrollbar { display: none; }
+.sectionNav { position: sticky; top: 0; z-index: 6; display: flex; gap: 6px; padding: 8px 0 10px; overflow-x: auto; background: linear-gradient(var(--paper) 80%, transparent); }
 .sectionNav a { flex: none; padding: 6px 13px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: 13px; font-weight: 600; transition: background-color 150ms; }
 .sectionNav a:hover { background: var(--lime); }
 .sectionNav a:focus-visible { outline: 2px solid #3d6124; outline-offset: 2px; }

@@ -44,7 +44,6 @@
   font: 500 11px/1.4 var(--mono);
 }
 
-.showcaseFooter span:last-child { color: var(--lime); font-size: 17px; }
 
 .portfoliosHeading {
   padding-top: clamp(23px, 4vw, 40px);
@@ -129,8 +128,6 @@
 }
 .showcase :global(.preview-template) { position: relative; }
 .showcase .namePreview { filter: grayscale(1); mix-blend-mode: multiply; }
-.previewStatus { display: inline-flex; align-items: center; gap: 7px; text-transform: none; font: 600 12px/1.4 Arial, sans-serif; }
-.previewStatus[data-live]::before { width: 6px; height: 6px; border-radius: 50%; background: #daf977; box-shadow: 0 0 8px #daf97764; content: ""; }
 
 .filters {
   display: flex;
@@ -155,6 +152,104 @@
 .filters button:is(:hover, [aria-pressed="true"]) { background: transparent; color: var(--ink); }
 .filters button[aria-pressed="true"] { border-bottom-color: #56733b; }
 
-.cardStatus { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 650; }
-.cardStatus::before { width: 6px; height: 6px; border-radius: 50%; background: #abae9f; content: ""; }
-.cardStatus[data-live]::before { background: #56833a; }
+
+.shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+.shortcut:hover { background: #e9eedb; }
+.shortcut.shortcutPrimary { padding: 6px 15px 6px 6px; }
+.shortcut.shortcutPrimary:hover { background: #c9ed54; }
+.shortcutIcon {
+  display: inline-grid;
+  flex: none;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid #cbd5b7;
+  border-radius: 7px;
+  background: #eef3e1;
+  color: #385733;
+}
+.shortcutIcon svg { width: 19px; height: 19px; }
+.shortcutIcon[data-kind="edit"], .shortcutIcon[data-kind="add"] { border-color: #293b25; background: #243a25; color: #ecffa7; }
+.shortcutIcon[data-kind="profile"] { border-color: #e2caaa; background: #f4e8d1; color: #6a4c25; }
+.showcaseFooter .shortcutIcon { width: 23px; height: 23px; border-color: #788b62; background: #263d2a; color: #dcf990; }
+.showcaseFooter .shortcutIcon svg { width: 14px; height: 14px; }
+
+.adminPass {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 6px;
+  padding: 3px 7px 3px 4px;
+  border: 1px solid #3b5034;
+  border-radius: 5px;
+  background: #243822;
+  color: #e4ffa5;
+  font: 700 11px/1 var(--mono);
+  vertical-align: .12em;
+}
+.adminPass .shortcutIcon { width: 19px; height: 19px; border-color: #547044; border-radius: 3px; background: #374e2d; color: #e4ffa5; }
+.adminPass .shortcutIcon svg { width: 13px; height: 13px; }
+
+.signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 4px 7px;
+  border: 1px solid #d7dbcc;
+  border-radius: 5px;
+  background: #f3f4ed;
+  color: #505950;
+  font: 650 12px/1.2 Arial, sans-serif;
+  text-transform: none;
+}
+.signal[data-status="pending"] { border-color: #e0c386; background: #fff4d6; color: #664514; }
+.signal[data-status="live"] { border-color: #c6d8ae; background: #eaf3db; color: #305226; }
+.showcaseSignal { border-color: #72806e; background: #2a3c2d; color: #f4f9e9; }
+.showcaseSignal[data-status="live"] { border-color: #617f48; background: #2c462b; color: #e6ffa7; }
+.airwaves { display: inline-flex; height: 10px; align-items: center; gap: 2px; }
+.airwaves i { width: 2px; height: 45%; border-radius: 3px; background: currentColor; }
+.airwaves i:nth-child(2) { height: 100%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .shortcutIcon svg { transition: transform 170ms ease; }
+  .shortcut:is(:hover, :focus-visible) [data-kind="edit"] svg { transform: rotate(-12deg) translateY(-1px); }
+  .shortcut:is(:hover, :focus-visible) [data-kind="templates"] svg { transform: rotate(9deg) scale(1.08); }
+  .shortcut:is(:hover, :focus-visible) [data-kind="profile"] svg { transform: translateY(-2px); }
+  :is(.card, .showcaseLink):is(:hover, :focus-within) .airwaves i { animation: broadcast 500ms ease-out 2; }
+  :is(.card, .showcaseLink):is(:hover, :focus-within) .airwaves i:nth-child(2) { animation-delay: 65ms; }
+  :is(.card, .showcaseLink):is(:hover, :focus-within) .airwaves i:nth-child(3) { animation-delay: 130ms; }
+}
+
+@keyframes broadcast {
+  50% { transform: scaleY(.4); }
+}
+
+.deleteDialog { display: grid; gap: 12px; overflow-wrap: anywhere; }
+.deleteDialog h2 { font-size: clamp(25px, 5vw, 36px); font-weight: 760; line-height: 1.1; letter-spacing: -.055em; }
+.deleteDialog p { line-height: 1.5; }
+.deleteIcon {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #e3c1b5;
+  border-radius: 9px;
+  background: #f9e8e1;
+  color: #933523;
+}
+.deleteIcon svg { width: 22px; height: 22px; }
+.deleteAddress { color: var(--muted); font: 500 13px/1.4 var(--mono); }
+.deleteActions { justify-content: flex-end; margin-top: 10px; }
+.deleteActions .deleteConfirm { border-color: #a14432; background: #a14432; color: #fff; }
+.deleteActions .deleteConfirm:hover:not(:disabled) { border-color: #853222; background: #853222; }
