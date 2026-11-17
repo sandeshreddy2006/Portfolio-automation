@@ -104,7 +104,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   }
 
   return (
-    <main className={styles.root}>
+    <main className={styles.root} data-night={night || undefined}>
       <div className={styles.scenery} aria-hidden="true" />
       <header className={styles.header}>
         <span className={styles.wordmark}>Trainer Journal</span>
@@ -131,7 +131,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
               <h2 id="trainer-map-title">Signal Town</h2>
               <button type="button" aria-pressed={night} onClick={() => setNight(!night)}>{night ? "Switch to day" : "Switch to night"}</button>
             </div>
-            <div className={styles.map} data-night={night || undefined} tabIndex={0} onKeyDown={onMapKey} aria-label="Town map. Use arrow keys or WASD to walk and Enter near a building to visit.">
+            <div className={styles.map} tabIndex={0} onKeyDown={onMapKey} aria-label="Town map. Use arrow keys or WASD to walk and Enter near a building to visit.">
               <div aria-hidden="true" className={styles.path} />
               <div aria-hidden="true" className={styles.pond} />
               <div aria-hidden="true" className={styles.plaza} />
