@@ -5,13 +5,14 @@ import { Bento } from "./bento";
 import { Blocky } from "./blocky";
 import { Cinema } from "./cinema";
 import { Brutalist } from "./brutalist";
+import { Desktop } from "./desktop";
 import { Editorial } from "./editorial";
 import { templateInfo, type TemplateInfo } from "./meta";
 import { Storefront } from "./storefront";
 import { Terminal } from "./terminal";
 
 export type TemplateMeta = TemplateInfo & {
-  Component: ComponentType<{ content: PortfolioContent }>;
+  Component: ComponentType<{ content: PortfolioContent; resumeHref?: string }>;
 };
 
 const components: Record<string, TemplateMeta["Component"]> = {
@@ -23,6 +24,7 @@ const components: Record<string, TemplateMeta["Component"]> = {
   aurora: Aurora,
   storefront: Storefront,
   cinema: Cinema,
+  desktop: Desktop,
 };
 
 export const templates: TemplateMeta[] = templateInfo.map((info) => ({

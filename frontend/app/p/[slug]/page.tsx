@@ -37,13 +37,15 @@ async function Portfolio({ params }: { params: PageProps<"/p/[slug]">["params"] 
   const template = portfolio && getTemplate(portfolio.published_content.template_id);
   if (!portfolio || !template) notFound();
 
+  const resumeHref = portfolio.published_content.resume_id ? `/p/${slug}/resume` : undefined;
+
   return (
     <div data-portfolio-export={portfolio.published_at} style={{ display: "contents" }}>
-      <template.Component content={portfolio.published_content} />
+      <template.Component content={portfolio.published_content} resumeHref={resumeHref} />
       <footer className={styles.badge}>
-        {portfolio.published_content.resume_id && (
+        {resumeHref && template.id !== "desktop" && (
           <>
-            <a href={`/p/${slug}/resume`} download="resume.pdf">Download résumé</a>
+            <a href={resumeHref} download="resume.pdf">Download résumé</a>
             <span aria-hidden="true">·</span>
           </>
         )}

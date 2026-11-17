@@ -64,4 +64,11 @@ export const templateInfo: TemplateInfo[] = [
     bestFor: "Filmmakers, game developers and anyone with strong project visuals.",
     swatches: ["#141414", "#ff3340", "#601b30"],
   },
+  {
+    id: "desktop",
+    name: "Desktop",
+    tagline: "A retro workspace with draggable windows and a working taskbar.",
+    bestFor: "Developers, designers and anyone who wants visitors to explore their work.",
+    swatches: ["#281647", "#cbb3ff", "#ffcb72"],
+  },
 ];
