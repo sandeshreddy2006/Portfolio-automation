@@ -432,7 +432,7 @@ export default function Dashboard() {
           </form>
         </dialog>
       )}
-      {state === "ready" && <HomeSections />}
+      {state === "ready" && <div className={dashboard.resources}><HomeSections /></div>}
     </main>
   );
 }
