@@ -15,7 +15,19 @@ const subscribe = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
 const vectors: Partial<Record<string, [number, number]>> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-const icons: Record<AppIcon, string> = { about: "☺", career: "▤", project: "▰", links: "↗", resume: "⇩" };
+const icons: Record<AppIcon, string> = { about: "☺", career: "▤", project: "", links: "↗", resume: "⇩" };
+const clockFormat = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+const clockSnapshot = () => clockFormat.format(new Date());
+const serverClock = () => "";
+const subscribeClock = (notify: () => void) => {
+  const timer = window.setInterval(notify, 1000);
+  return () => window.clearInterval(timer);
+};
+
+function MenuClock() {
+  const time = useSyncExternalStore(subscribeClock, clockSnapshot, serverClock);
+  return <span className={styles.clock}>{time}</span>;
+}
 const clamp = (value: number, max: number) => Math.min(Math.max(0, value), Math.max(0, max));
 
 export function Desktop({ content, resumeHref }: { content: PortfolioContent; resumeHref?: string }) {
@@ -167,13 +179,31 @@ export function Desktop({ content, resumeHref }: { content: PortfolioContent; re
     changeWindow(id, { x: clamp(clamp(x, maxX) + vector[0] * 20, maxX), y: clamp(clamp(y, maxY) + vector[1] * 20, maxY) });
   }
 
+  function showDesktop() {
+    setWindows((current) => Object.fromEntries(Object.entries(current).map(([id, item]) => [id, { ...item, minimized: true }])));
+  }
+
   return (
     <main className={styles.root} data-enhanced={enhanced || undefined}>
+      <header className={styles.menuBar}>
+        <h1>{name}</h1>
+        {enhanced && (
+          <>
+            <details ref={launcher} className={styles.launcher}>
+              <summary>Go</summary>
+              <ul>{apps.map((app) => (
+                <li key={app.id}><button type="button" onClick={() => {
+                  if (launcher.current) launcher.current.open = false;
+                  launchApp(app.id);
+                }}>{app.label}</button></li>
+              ))}</ul>
+            </details>
+            <button type="button" className={styles.showDesktop} onClick={showDesktop}>Show Desktop</button>
+            <MenuClock />
+          </>
+        )}
+      </header>
       <div className={styles.workspace} ref={workspace}>
-        <header className={styles.heading}>
-          <h1>{name}<span aria-hidden="true"> / Desktop</span></h1>
-          <p>Open an icon to explore.{enhanced && <span className={styles.dragHint}> Drag a title bar to move its window.</span>}</p>
-        </header>
         {enhanced && (
           <nav className={styles.shortcuts} aria-label="Desktop apps">
             {apps.map((app) => (
@@ -208,10 +238,10 @@ export function Desktop({ content, resumeHref }: { content: PortfolioContent; re
                       onLostPointerCapture={() => { drag.current = null; }}
                       onKeyDown={(event) => moveWithKeys(event, app.id)}>{app.label}</button>
                     <div className={styles.controls}>
-                      <button type="button" aria-label={`Minimize ${app.label}`} onClick={() => minimizeApp(app.id)}>−</button>
+                      <button type="button" className={styles.close} aria-label={`Close ${app.label}`} onClick={() => closeApp(app.id)}><span aria-hidden="true">×</span></button>
+                      <button type="button" className={styles.minimize} aria-label={`Minimize ${app.label}`} onClick={() => minimizeApp(app.id)}><span aria-hidden="true">−</span></button>
                       <button type="button" className={styles.maximize} aria-label={`${item?.maximized ? "Restore" : "Maximize"} ${app.label}`}
-                        onClick={() => changeWindow(app.id, { maximized: !item?.maximized })}>{item?.maximized ? "❐" : "□"}</button>
-                      <button type="button" aria-label={`Close ${app.label}`} onClick={() => closeApp(app.id)}>×</button>
+                        onClick={() => changeWindow(app.id, { maximized: !item?.maximized })}><span aria-hidden="true">{item?.maximized ? "−" : "+"}</span></button>
                     </div>
                   </div>
                   <div className={styles.body}>{app.body}</div>
@@ -221,25 +251,18 @@ export function Desktop({ content, resumeHref }: { content: PortfolioContent; re
           })}
         </div>
       </div>
-      <nav className={styles.taskbar} aria-label="Desktop taskbar">
-        <details ref={launcher} className={styles.launcher}>
-          <summary><span aria-hidden="true">▦</span> Start</summary>
-          <ul>{apps.map((app) => (
-            <li key={app.id}><button type="button" onClick={() => {
-              if (launcher.current) launcher.current.open = false;
-              launchApp(app.id);
-            }}><span aria-hidden="true">{icons[app.icon]}</span> {app.label}</button></li>
-          ))}</ul>
-        </details>
-        <div className={styles.tasks} aria-label="Open windows">
-          {apps.filter(({ id }) => windows[id]).map((app) => (
-            <button type="button" key={app.id} aria-pressed={app.id === active}
-              onClick={() => app.id === active ? minimizeApp(app.id) : launchApp(app.id)}>{app.label}</button>
+      {enhanced && (
+        <nav className={styles.dock} aria-label="Desktop Dock">
+          {apps.map((app) => (
+            <button type="button" key={app.id} className={styles.dockApp}
+              aria-label={app.label} title={app.label} aria-pressed={app.id === active}
+              data-open={Boolean(windows[app.id])}
+              onClick={() => launchApp(app.id)}>
+              <span className={styles.icon} data-kind={app.icon} aria-hidden="true">{icons[app.icon]}</span>
+            </button>
           ))}
-        </div>
-        <button type="button" className={styles.showDesktop} title="Show desktop" aria-label="Show desktop"
-          onClick={() => setWindows((current) => Object.fromEntries(Object.entries(current).map(([id, item]) => [id, { ...item, minimized: true }])))}>▣</button>
-      </nav>
+        </nav>
+      )}
     </main>
   );
 }
