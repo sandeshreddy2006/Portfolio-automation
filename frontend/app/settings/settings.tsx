@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { initials } from "@/lib/portfolio";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { profile } from "@/lib/api";
+import { imageFramingStyle } from "@/lib/image";
+import { initials, safeImage, type ProfileContent } from "@/lib/portfolio";
 import { AuthLink } from "../auth/auth-dialog";
 import { useAccount } from "../auth/use-account";
 import { useCookiePreference } from "../cookie-controls";
 import styles from "./settings.module.css";
+import banner from "../workspace-banner.module.css";
 
 const paths = {
+  grid: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
   profile: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8v-1a7 7 0 0 1 14 0v1",
   key: "M14 10a5 5 0 1 0-4 4l2 2h3v3h3l2-2-6-7Zm-4-2h.01",
   mail: "M3 6h18v12H3zM3 7l9 6 9-6",
@@ -20,10 +25,20 @@ const paths = {
 type Icon = keyof typeof paths;
 
 const sections = [
-  ["security", "Account security"],
-  ["privacy", "Privacy and policies"],
-  ["help", "Help and feedback"],
+  ["security", "Account security", "key"],
+  ["privacy", "Privacy and policies", "shield"],
+  ["help", "Help and feedback", "help"],
 ] as const;
+
+function subscribeToSection(notify: () => void) {
+  window.addEventListener("hashchange", notify);
+  return () => window.removeEventListener("hashchange", notify);
+}
+
+function currentSection() {
+  const hash = window.location.hash.slice(1);
+  return sections.find(([id]) => id === hash)?.[0] ?? "security";
+}
 
 function Glyph({ icon }: { icon: Icon }) {
   return (
@@ -60,19 +75,41 @@ const links = {
 export default function Settings() {
   const account = useAccount();
   const cookie = useCookiePreference();
+  const section = useSyncExternalStore(subscribeToSection, currentSection, () => "security");
+  const [photo, setPhoto] = useState<(Pick<ProfileContent, "avatar" | "avatar_framing"> & { email: string })>();
+  const [failedPhoto, setFailedPhoto] = useState<string>();
+  const email = account?.email;
+  const avatar = photo && photo.email === email ? safeImage(photo.avatar) : undefined;
+
+  useEffect(() => {
+    if (!email) return;
+    let active = true;
+    profile.get().then(({ content }) => {
+      if (active) setPhoto({ email, avatar: content.avatar, avatar_framing: content.avatar_framing });
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [email]);
+
   const name = account?.name.trim() || account?.email;
   const cookieStatus = cookie === "allowed" ? "Essential cookies allowed" : cookie === "declined" ? "Cookies declined" : cookie === "undecided" ? "No choice saved" : "Checking preference…";
 
   return (
     <main className={`page-width ${styles.page}`}>
-      <header className={styles.hero}>
-        <div>
+      <header className={`${banner.banner} ${styles.hero}`}>
+        <div className={banner.art} aria-hidden="true"><span className={banner.ribbon} /></div>
+        <div className={styles.heroCopy}>
           <h1>Settings</h1>
           <p>Manage how you sign in, control your privacy, and get help with Portfolabs.</p>
         </div>
         <div className={styles.account} aria-label="Account overview">
           <div className={styles.identity}>
-            <span className={styles.avatar} aria-hidden="true">{name ? initials(name) : <Glyph icon="profile" />}</span>
+            <span className={styles.avatar} aria-hidden="true">
+              {avatar && avatar !== failedPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatar} alt="" style={photo?.avatar_framing ? imageFramingStyle(photo.avatar_framing) : undefined}
+                  onError={() => setFailedPhoto(avatar)} />
+              ) : name ? initials(name) : <Glyph icon="profile" />}
+            </span>
             <div>
               <h2>{name || (account === undefined ? "Your account" : "You’re signed out")}</h2>
               {account && name !== account.email && <p>{account.email}</p>}
@@ -87,9 +124,19 @@ export default function Settings() {
         </div>
       </header>
       <div className={styles.body}>
-        <nav className={styles.jump} aria-label="Settings sections">
-          {sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
-        </nav>
+        <aside className={styles.rail} aria-label="Settings navigation">
+          <nav className={styles.jump} aria-label="Settings sections">
+            {sections.map(([id, label, icon]) => (
+              <a key={id} href={`#${id}`} aria-current={section === id ? "location" : undefined}>
+                <Glyph icon={icon} /><span>{label}</span>
+              </a>
+            ))}
+          </nav>
+          <div className={styles.railActions}>
+            <Link href="/dashboard"><Glyph icon="grid" /><span>My portfolios</span><span aria-hidden="true">›</span></Link>
+            <Link href="/report/bug"><Glyph icon="bug" /><span>Report a bug</span><span aria-hidden="true">›</span></Link>
+          </div>
+        </aside>
         <div className={styles.panels}>
           <section id="security" className={styles.panel} aria-labelledby="security-title">
             <h2 id="security-title">Account security</h2>

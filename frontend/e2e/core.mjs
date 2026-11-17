@@ -145,13 +145,16 @@ try {
 
   await page.goto(`${BASE}/dashboard`);
   const portfolioCard = page.getByRole("listitem").filter({ hasText: `/p/${slug}` });
-  const deleteButton = portfolioCard.getByRole("button", { name: "Delete", exact: true });
+  const moreActions = portfolioCard.getByRole("button", { name: "More portfolio actions" });
+  const deleteButton = portfolioCard.getByRole("button", { name: "Delete portfolio", exact: true });
   const confirmation = page.getByRole("dialog", { name: "Delete portfolio?" });
+  await moreActions.click();
   await deleteButton.click();
   await confirmation.getByText(`/p/${slug}`, { exact: true }).waitFor();
   await confirmation.getByRole("button", { name: "Cancel" }).click();
   await confirmation.waitFor({ state: "hidden" });
   await portfolioCard.waitFor();
+  await moreActions.click();
   await deleteButton.click();
   await confirmation.getByRole("button", { name: "Delete portfolio" }).click();
   await portfolioCard.waitFor({ state: "hidden" });

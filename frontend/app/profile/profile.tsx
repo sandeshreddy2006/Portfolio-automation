@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ApiError, logout, profile } from "@/lib/api";
-import type { ProfileContent, ProfileDetails } from "@/lib/portfolio";
+import { initials, safeImage, type ProfileContent, type ProfileDetails } from "@/lib/portfolio";
+import { UserImage } from "@/components/templates/user-image";
 import { applyResumeDetails, prepareProfile } from "@/lib/profile";
 import { AuthLink } from "../auth/auth-dialog";
 import GoogleButton from "../auth/google-button";
@@ -11,6 +12,8 @@ import ImageField from "../editor/[slug]/image-field";
 import PortfolioFields from "../editor/[slug]/portfolio-fields";
 import ResumeImport from "../editor/[slug]/resume-import";
 import styles from "../studio.module.css";
+import banner from "../workspace-banner.module.css";
+import profileBanner from "./profile-banner.module.css";
 
 export default function Profile() {
   const [details, setDetails] = useState<ProfileDetails>();
@@ -125,13 +128,37 @@ export default function Profile() {
 
   return (
     <main className={`page-width ${styles.page}`}>
-      <div className={styles.profileHero}>
-        <div>
-          <h1 className={styles.title}>Your profile</h1>
-          <p className={styles.lead}>Save your details once and reuse them when you build a portfolio.</p>
+      <header className={`${banner.banner} ${profileBanner.hero}`} data-profile>
+        <div className={banner.art} aria-hidden="true"><span className={banner.ribbon} /></div>
+        <div className={banner.reveal}>
+          <h1>Your profile</h1>
+          <p className={profileBanner.intro}>Save your details once and reuse them when you build a portfolio.</p>
+          <div className={profileBanner.toolbar}>
+            <button type="button" className={styles.primary} disabled={busy || !dirty} onClick={() => void save()}>Save profile</button>
+            <span className={profileBanner.saveStatus} data-dirty={dirty || undefined}>
+              {dirty ? "Unsaved changes" : "All changes saved"}
+            </span>
+          </div>
         </div>
-        <button type="button" className={styles.primary} disabled={busy || !dirty} onClick={() => void save()}>Save profile</button>
-      </div>
+        <div className={profileBanner.card}>
+          <div className={profileBanner.identity}>
+            {safeImage(content.avatar) ? (
+              <UserImage src={content.avatar} framing={content.avatar_framing} className={profileBanner.photo} priority />
+            ) : (
+              <span className={profileBanner.photo} aria-hidden="true">{initials(content.name || details.email)}</span>
+            )}
+            <div>
+              <h2>{content.name.trim() || "Your portfolio profile"}</h2>
+              {content.headline.trim() && <p>{content.headline}</p>}
+            </div>
+          </div>
+          <p className={profileBanner.stats}>
+            <span><strong>{content.projects.length}</strong> {content.projects.length === 1 ? "project" : "projects"}</span>
+            <span><strong>{content.experience?.length ?? 0}</strong> {content.experience?.length === 1 ? "role" : "roles"}</span>
+            {details.resume_id && <span>Résumé on file</span>}
+          </p>
+        </div>
+      </header>
       {message && <p className={styles.note} role="status">{message}</p>}
       {error && <p className={styles.error} role="alert">{error}</p>}
 

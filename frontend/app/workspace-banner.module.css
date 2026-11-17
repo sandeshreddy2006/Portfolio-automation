@@ -1,0 +1,51 @@
+.banner { position: relative; isolation: isolate; }
+.art { position: absolute; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; }
+.art::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#c1eb7d1a 1px, transparent 1px) 0 0 / 25px 25px,
+    linear-gradient(90deg, #c1eb7d1a 1px, transparent 1px) 0 0 / 25px 25px;
+  mask-image: linear-gradient(110deg, transparent 27%, #000 82%);
+  content: "";
+}
+.art::after {
+  position: absolute;
+  inset: -35% -15%;
+  background: linear-gradient(118deg, transparent 41%, #cdf38e2b 49%, #e8ffa336 50%, transparent 58%);
+  opacity: 0;
+  content: "";
+}
+.ribbon {
+  position: absolute;
+  top: -96%;
+  right: -8%;
+  width: 76%;
+  height: 235%;
+  border: 1px solid #caed8d65;
+  border-radius: 50%;
+  box-shadow: 0 0 0 14px #badf8918, 0 0 0 35px #c8f27716, 0 0 0 63px #c8f27712, inset 0 0 80px #c8f27718;
+  transform: rotate(-24deg);
+}
+.banner[data-profile] .ribbon { top: -57%; right: -21%; height: 205%; transform: rotate(-38deg); }
+.banner[data-profile] .art::before { mask-image: linear-gradient(90deg, transparent 19%, #000 71%); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .art::after { animation: light-pass 1450ms ease-out 130ms both; }
+  .ribbon { animation: trace-enter 950ms cubic-bezier(.18,.8,.25,1) both; }
+  .reveal { animation: reveal-copy 620ms cubic-bezier(.18,.8,.25,1) both; }
+  .reveal:focus-within { animation: none; }
+}
+
+@keyframes trace-enter {
+  from { opacity: .15; scale: .78; translate: 28px 8px; }
+  to { opacity: 1; scale: 1; translate: none; }
+}
+@keyframes light-pass {
+  0% { opacity: 0; transform: translateX(-49%); }
+  33% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(46%); }
+}
+@keyframes reveal-copy {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: none; }
+}

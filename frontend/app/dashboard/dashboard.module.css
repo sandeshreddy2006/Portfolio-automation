@@ -256,3 +256,57 @@
 .deleteActions { justify-content: flex-end; margin-top: 10px; }
 .deleteActions .deleteConfirm { border-color: #a14432; background: #a14432; color: #fff; }
 .deleteActions .deleteConfirm:hover:not(:disabled) { border-color: #853222; background: #853222; }
+
+.cardAddress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 4px 6px 4px 11px;
+  min-height: 43px;
+  border-radius: 8px;
+  background: #eeefe5;
+  color: #444e3d;
+  font: 500 13px/1.4 var(--mono);
+}
+.cardAddress button, .more {
+  display: grid;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 6px;
+  color: #465340;
+  cursor: pointer;
+}
+.cardAddress button:hover, .cardAddress button[data-copied], .more:hover { background: #e0e9d1; }
+.cardAddress svg { width: 17px; height: 17px; }
+.cardActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 9px; }
+.cardEdited { color: var(--muted); font-size: 12px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-inline-start: auto; }
+.controls .cardEdit { padding: 8px 14px; border-radius: 8px; }
+.viewLive { padding: 7px 5px; font-size: 13px; font-weight: 700; }
+.viewLive span { margin-inline-start: 2px; }
+.viewLive:hover { text-decoration: underline; text-underline-offset: 3px; }
+.more { font-size: 12px; letter-spacing: 2px; }
+.moreMenu {
+  position: fixed;
+  inset: var(--menu-top) var(--menu-right) auto auto;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffef7;
+  box-shadow: 0 8px 22px #19211b26;
+}
+.moreMenu button {
+  padding: 8px 11px;
+  border-radius: 5px;
+  color: #963326;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.moreMenu button:hover { background: #f9e7e0; }
+.copyStatus { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

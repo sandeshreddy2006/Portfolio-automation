@@ -1,0 +1,60 @@
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, .9fr);
+  align-items: center;
+  gap: clamp(22px, 5vw, 64px);
+  overflow: hidden;
+  padding: clamp(22px, 4.5vw, 56px);
+  border-radius: 16px;
+  border: 1px solid #344a34;
+  background: radial-gradient(ellipse at 100% 75%, #4c693d, transparent 68%), #182820;
+  color: #f6fbea;
+}
+
+.hero h1 { font-size: clamp(42px, 7vw, 82px); font-weight: 760; line-height: .96; letter-spacing: -.085em; }
+.hero .intro { max-width: 35ch; margin-top: 16px; color: #d5e0cb; font-size: clamp(16px, 2vw, 20px); line-height: 1.55; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 22px; }
+.saveStatus { display: flex; align-items: center; gap: 7px; color: #e0edcf; font-size: 13px; }
+.saveStatus::before { width: 7px; height: 7px; border-radius: 50%; background: #a5ce7e; content: ""; }
+.saveStatus[data-dirty]::before { background: #ffd282; box-shadow: 0 0 0 3px #ffd28232; }
+
+.card {
+  position: relative;
+  min-width: 0;
+  padding: clamp(16px, 3vw, 26px);
+  border: 1px solid #c6db9e;
+  border-radius: 12px;
+  background: linear-gradient(140deg, #f2f6e3, #fcfff3 62%, #e9f3cc);
+  color: #213322;
+  box-shadow: 0 18px 44px #07170955;
+}
+.identity { display: flex; align-items: center; gap: 14px; overflow-wrap: anywhere; }
+.identity h2 { font-size: clamp(19px, 3vw, 27px); font-weight: 750; line-height: 1.12; letter-spacing: -.04em; }
+.identity p { margin-top: 5px; color: #50654e; font-size: 14px; }
+.photo {
+  display: grid;
+  flex: none;
+  width: clamp(49px, 7vw, 70px);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid #9eb574;
+  border-radius: 10px;
+  background: #d4e4b0;
+  color: #324c2e;
+  object-fit: cover;
+  font-size: 22px;
+  font-weight: 760;
+}
+.stats { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 16px 0 0; padding-top: 13px; border-top: 1px solid #b8c7a1; color: #50654e; font-size: 13px; }
+.stats strong { color: #273e2d; }
+
+@media (max-width: 740px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card { animation: card-arrive 760ms cubic-bezier(.18,.8,.25,1) 100ms both; }
+}
+@keyframes card-arrive {
+  from { opacity: 0; transform: translate(21px, 15px) rotate(2deg); }
+  to { opacity: 1; transform: none; }
+}

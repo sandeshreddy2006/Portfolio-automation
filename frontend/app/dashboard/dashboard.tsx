@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AuthLink } from "../auth/auth-dialog";
 import { useAccount } from "../auth/use-account";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type PointerEvent } from "react";
 import { templateInfo } from "@/components/templates/meta";
 import { ApiError, portfolios, profile } from "@/lib/api";
 import { MAX_PORTFOLIOS, type PortfolioSummary, type ProfileContent } from "@/lib/portfolio";
@@ -89,6 +89,7 @@ export default function Dashboard() {
   const [state, setState] = useState<State>("loading");
   const [items, setItems] = useState<PortfolioSummary[]>([]);
   const [message, setMessage] = useState("");
+  const menuPrefix = useId();
   const deleteDialog = useRef<HTMLDialogElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<PortfolioSummary>();
   const [deleting, setDeleting] = useState(false);
@@ -390,22 +391,46 @@ export default function Dashboard() {
                   <h3>{item.name}</h3>
                   <PortfolioSignal item={item} />
                 </div>
-                <p className={styles.meta}>/p/{item.slug} · {design?.name ?? item.template_id}</p>
-                <span className={styles.updated}>Edited {timeAgo(item.updated_at)}</span>
+                <div className={dashboard.cardAddress}>
+                  <span>/p/{item.slug}</span>
+                  {item.published && (
+                    <button type="button" aria-label="Copy link" title={copied === item.slug ? "Copied!" : "Copy link"}
+                      data-copied={copied === item.slug || undefined} onClick={() => void copyLink(item.slug)}>
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        {copied === item.slug ? <path d="m4 10 4 4 8-8" /> : <path d="M7 7h9v9H7zM4 13V4h9" />}
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className={`${styles.actions} ${dashboard.cardActions}`}>
-                <Link href={`/editor/${item.slug}`} className={styles.primary}>Edit</Link>
-                {item.published && <Link href={`/p/${item.slug}`} className={styles.secondary} target="_blank">View live</Link>}
-                {item.published && <button type="button" className={styles.secondary} onClick={() => copyLink(item.slug)}>{copied === item.slug ? "Copied!" : "Copy link"}</button>}
-                <button type="button" className={styles.danger} onClick={() => {
-                  setDeleteError("");
-                  setDeleteTarget(item);
-                }}>Delete</button>
+              <div className={dashboard.cardActions}>
+                <span className={dashboard.cardEdited}>Edited {timeAgo(item.updated_at)} · {design?.name ?? item.template_id}</span>
+                <div className={dashboard.controls}>
+                  {item.published && <Link href={`/p/${item.slug}`} className={dashboard.viewLive} target="_blank">View live <span aria-hidden="true">↗</span></Link>}
+                  <Link href={`/editor/${item.slug}`} className={`${styles.primary} ${dashboard.cardEdit}`}>Edit</Link>
+                  <button type="button" className={dashboard.more} aria-label="More portfolio actions"
+                    popoverTarget={`${menuPrefix}-${item.slug}`} onClick={(event) => {
+                      const menu = document.getElementById(`${menuPrefix}-${item.slug}`);
+                      const bounds = event.currentTarget.getBoundingClientRect();
+                      menu?.style.setProperty("--menu-right", `${window.innerWidth - bounds.right}px`);
+                      menu?.style.setProperty("--menu-top", `${bounds.bottom + 52 > window.innerHeight ? bounds.top - 52 : bounds.bottom + 5}px`);
+                    }}>
+                    <span aria-hidden="true">•••</span>
+                  </button>
+                  <div id={`${menuPrefix}-${item.slug}`} popover="auto" className={dashboard.moreMenu}>
+                    <button type="button" onClick={(event) => {
+                      event.currentTarget.parentElement?.hidePopover();
+                      setDeleteError("");
+                      setDeleteTarget(item);
+                    }}>Delete portfolio</button>
+                  </div>
+                </div>
               </div>
             </li>
           );
         })}
       </ul>
+      <span className={dashboard.copyStatus} role="status">{copied ? "Portfolio link copied." : ""}</span>
       {deleteTarget && (
         <dialog ref={deleteDialog} className="auth-dialog" aria-labelledby="delete-portfolio-title"
           aria-describedby="delete-portfolio-description" onClose={() => setDeleteTarget(undefined)}
