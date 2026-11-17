@@ -9,10 +9,11 @@ import { Desktop } from "./desktop";
 import { Editorial } from "./editorial";
 import { templateInfo, type TemplateInfo } from "./meta";
 import { Storefront } from "./storefront";
+import { TrainerJournal } from "./trainer-journal";
 import { Terminal } from "./terminal";
 
 export type TemplateMeta = TemplateInfo & {
-  Component: ComponentType<{ content: PortfolioContent; resumeHref?: string }>;
+  Component: ComponentType<{ content: PortfolioContent; resumeHref?: string; portfolioKey?: string }>;
 };
 
 const components: Record<string, TemplateMeta["Component"]> = {
@@ -25,13 +26,16 @@ const components: Record<string, TemplateMeta["Component"]> = {
   storefront: Storefront,
   cinema: Cinema,
   desktop: Desktop,
+  "trainer-journal": TrainerJournal,
 };
 
-export const templates: TemplateMeta[] = templateInfo.map((info) => ({
+const allTemplates: TemplateMeta[] = templateInfo.map((info) => ({
   ...info,
   Component: components[info.id],
 }));
 
+export const templates = allTemplates.filter((template) => !template.adminOnly);
+
 export function getTemplate(id: string): TemplateMeta | undefined {
-  return templates.find((template) => template.id === id);
+  return allTemplates.find((template) => template.id === id);
 }

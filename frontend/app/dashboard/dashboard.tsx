@@ -83,7 +83,7 @@ export default function Dashboard() {
   const displayName = account?.name?.trim() || account?.email?.split("@")[0];
   const firstName = displayName?.split(/\s+/)[0];
   const requested = useSearchParams().get("template");
-  const wantedTemplate = templateInfo.find((template) => template.id === requested)?.id;
+  const wantedTemplate = templateInfo.find((template) => template.id === requested && (!template.adminOnly || isAdmin))?.id;
   const [filter, setFilter] = useState<Filter>("All");
   const [copied, setCopied] = useState("");
   const [state, setState] = useState<State>("loading");
@@ -334,7 +334,7 @@ export default function Dashboard() {
           )}
           <fieldset className={styles.templates}>
             <legend>Choose a design (you can change it later)</legend>
-            {templateInfo.map((template) => (
+            {templateInfo.filter((entry) => !entry.adminOnly || isAdmin).map((template) => (
               <label key={template.id} className={templateId === template.id ? styles.templateActive : undefined}>
                 <input type="radio" name="template" value={template.id} checked={templateId === template.id}
                   onChange={() => setTemplateId(template.id)} />

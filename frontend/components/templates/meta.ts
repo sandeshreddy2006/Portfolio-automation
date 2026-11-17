@@ -5,6 +5,7 @@ export type TemplateInfo = {
   tagline: string;
   bestFor: string;
   swatches: string[];
+  adminOnly?: boolean;
 };
 
 export const templateInfo: TemplateInfo[] = [
@@ -71,4 +72,14 @@ export const templateInfo: TemplateInfo[] = [
     bestFor: "Developers, designers and anyone who wants visitors to explore their work.",
     swatches: ["#34195e", "#8775f2", "#35a8ef"],
   },
+  {
+    id: "trainer-journal",
+    name: "Trainer Journal",
+    tagline: "A walkable pixel town with playable project encounters.",
+    bestFor: "The Portfolabs admin’s personal portfolio.",
+    swatches: ["#b8e3f7", "#fff8db", "#dc5b4d"],
+    adminOnly: true,
+  },
 ];
+
+export const publicTemplateInfo = templateInfo.filter((template) => !template.adminOnly);

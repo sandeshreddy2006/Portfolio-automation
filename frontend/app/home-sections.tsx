@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { templateInfo } from "@/components/templates/meta";
+import { publicTemplateInfo } from "@/components/templates/meta";
 
 const workflow = [
   {
@@ -68,10 +68,10 @@ export default function HomeSections() {
       <section id="designs" tabIndex={-1} className="section" aria-labelledby="designs-title">
         <div className="section-heading">
           <h2 id="designs-title">Portfolio designs</h2>
-          <p>Explore {templateInfo.length} templates. Open any design to see a full preview.</p>
+          <p>Explore {publicTemplateInfo.length} templates. Open any design to see a full preview.</p>
         </div>
         <ul className="design-grid">
-          {templateInfo.map((template) => (
+          {publicTemplateInfo.map((template) => (
             <li key={template.id}>
               <Link href={`/templates/${template.id}`} className="design-card">
                 <Image

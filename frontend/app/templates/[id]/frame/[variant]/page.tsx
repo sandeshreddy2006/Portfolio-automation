@@ -12,7 +12,7 @@ export function generateStaticParams() {
 export default async function TemplateFrame({ params }: PageProps<"/templates/[id]/frame/[variant]">) {
   const { id, variant } = await params;
   const template = getTemplate(id);
-  if (!template || !sampleVariants.includes(variant as SampleVariant)) notFound();
+  if (!template || template.adminOnly || !sampleVariants.includes(variant as SampleVariant)) notFound();
 
   return <template.Component content={getSample(variant as SampleVariant, id)} />;
 }

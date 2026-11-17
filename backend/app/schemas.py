@@ -25,6 +25,7 @@ class ImageFraming(BaseModel):
 
 
 class PortfolioProject(BaseModel):
+    trainer_game: Literal["train", "cinema", "market", "workshop"] | None = None
     title: Title
     description: str = Field(default="", max_length=4000)
     url: HttpUrl | None = None
@@ -72,6 +73,7 @@ class ProfileDetails(BaseModel):
 
 class PortfolioContent(ProfileContent):
     template_id: Slug
+    trainer_contact_email: EmailStr | None = None
     search_visible: bool = False
     resume_id: ResumeId | None = None
 

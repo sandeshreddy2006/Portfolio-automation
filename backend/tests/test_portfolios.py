@@ -57,6 +57,21 @@ def test_configured_admin_has_unlimited_slots_with_normal_ownership(client, monk
     assert len(admin.get("/api/portfolios").json()) == 6
 
 
+def test_trainer_journal_requires_admin_and_preserves_encounters(client, monkeypatch):
+    monkeypatch.setenv("PORTFOLABS_ADMIN_EMAIL", "admin@example.com")
+    admin = login_as(make_user("admin@example.com"))
+    visitor = login_as(make_user("viewer@example.com"))
+    project = {"title": "Trip2gether", "trainer_game": "train"}
+    assert create(visitor, template_id="trainer-journal", projects=[project]).status_code == 403
+    assert create(admin, template_id="trainer-journal", projects=[project, project]).status_code == 422
+    assert create(admin, template_id="trainer-journal", projects=[project]).status_code == 201
+    assert admin.post("/api/portfolios/alex/publish").status_code == 200
+    public = client.get("/api/public/alex").json()
+    assert public["published_content"]["projects"][0]["trainer_game"] == "train"
+    monkeypatch.delenv("PORTFOLABS_ADMIN_EMAIL")
+    assert admin.post("/api/portfolios/alex/publish").status_code == 403
+
+
 def test_other_users_cannot_touch_a_portfolio(client):
     owner = login_as(make_user())
     create(owner)

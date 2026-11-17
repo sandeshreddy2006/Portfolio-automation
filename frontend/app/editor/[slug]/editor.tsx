@@ -12,6 +12,7 @@ import AssistButton from "./assist-button";
 import ImageField from "./image-field";
 import HostingSettings from "./hosting-settings";
 import ResumeImport from "./resume-import";
+import { useAccount } from "../../auth/use-account";
 import PortfolioFields from "./portfolio-fields";
 import { applyResumeDetails, fillUsingProfile, prepareProfile } from "@/lib/profile";
 import styles from "../../studio.module.css";
@@ -38,6 +39,7 @@ function forPreview(content: PortfolioContent): PortfolioContent {
 
 export default function Editor({ slug }: { slug: string }) {
   const router = useRouter();
+  const isAdmin = useAccount()?.is_admin === true;
   const [load, setLoad] = useState<Load>("loading");
   const [detail, setDetail] = useState<PortfolioDetail | null>(null);
   const [content, setContent] = useState<PortfolioContent | null>(null);
@@ -279,7 +281,7 @@ export default function Editor({ slug }: { slug: string }) {
           <section id="sec-design" className={styles.group}>
             <h2>Design</h2>
             <div className={styles.templatePicker}>
-              {templateInfo.map((template) => (
+              {templateInfo.filter((entry) => !entry.adminOnly || isAdmin).map((template) => (
                 <label key={template.id} className={content.template_id === template.id ? styles.templateActive : undefined}>
                   <input type="radio" name="template" value={template.id} checked={content.template_id === template.id}
                     onChange={() => update({ template_id: template.id })} />
@@ -321,6 +323,13 @@ export default function Editor({ slug }: { slug: string }) {
 
           <section id="sec-visibility" className={styles.group}>
             <h2>Publish settings</h2>
+            {content.template_id === "trainer-journal" && (
+              <label>Public contact email (optional)
+                <input type="email" maxLength={254} disabled={busy !== ""} value={content.trainer_contact_email ?? ""}
+                  onChange={(event) => update({ trainer_contact_email: event.target.value.trim() || null })} />
+                <small>Only enter an address you want shown to visitors in the Contact hub.</small>
+              </label>
+            )}
             {profileDetails?.resume_id ? (
               <>
                 <label className={styles.profileCheck}>

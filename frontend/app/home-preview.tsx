@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { templateInfo } from "@/components/templates/meta";
+import { publicTemplateInfo } from "@/components/templates/meta";
 
 export default function HomePreview() {
-  const [template, setTemplate] = useState(templateInfo[0]);
+  const [template, setTemplate] = useState(publicTemplateInfo[0]);
 
   useEffect(() => {
-    const selected = templateInfo[Math.floor(Math.random() * templateInfo.length)];
+    const selected = publicTemplateInfo[Math.floor(Math.random() * publicTemplateInfo.length)];
     const frame = requestAnimationFrame(() => setTemplate(selected));
     return () => cancelAnimationFrame(frame);
   }, []);

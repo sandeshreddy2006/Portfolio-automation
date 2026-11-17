@@ -5,7 +5,10 @@ export type PortfolioLink = { label: string; url: string };
 export type ImageFilter = "original" | "monochrome" | "warm" | "cool" | "vivid";
 export type ImageFraming = { x: number; y: number; zoom: number; filter: ImageFilter };
 
+export type TrainerGame = "train" | "cinema" | "market" | "workshop";
+
 export type PortfolioProject = {
+  trainer_game?: TrainerGame | null;
   title: string;
   description: string;
   url?: string | null;
@@ -33,6 +36,7 @@ export type ProfileDetails = { content: ProfileContent; email: string; google_co
 
 export type PortfolioContent = ProfileContent & {
   template_id: string;
+  trainer_contact_email?: string | null;
   /** Whether search engines may list the public page. Off unless the owner opts in. */
   search_visible?: boolean;
   resume_id?: string | null;

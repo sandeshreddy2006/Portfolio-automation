@@ -42,9 +42,9 @@ async function Portfolio({ params }: { params: PageProps<"/p/[slug]">["params"] 
 
   return (
     <div data-portfolio-export={portfolio.published_at} style={{ display: "contents" }}>
-      <template.Component content={portfolio.published_content} resumeHref={resumeHref} />
+      <template.Component content={portfolio.published_content} resumeHref={resumeHref} portfolioKey={slug} />
       <footer className={styles.badge}>
-        {resumeHref && template.id !== "desktop" && (
+        {resumeHref && template.id !== "desktop" && template.id !== "trainer-journal" && (
           <>
             <a href={resumeHref} download="resume.pdf">Download résumé</a>
             <span aria-hidden="true">·</span>

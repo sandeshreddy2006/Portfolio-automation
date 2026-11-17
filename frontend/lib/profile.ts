@@ -17,7 +17,7 @@ export function prepareProfile<T extends ProfileContent>(content: T): { value: T
     const url = (project.url ?? "").trim();
     if (!title && !description && !url && !project.image) continue;
     if (!title) return { value: content, error: `Project ${index + 1} needs a title.` };
-    projects.push({ title, description, url: url || null, image: project.image || null, image_framing: project.image ? project.image_framing ?? null : null });
+    projects.push({ trainer_game: project.trainer_game ?? null, title, description, url: url || null, image: project.image || null, image_framing: project.image ? project.image_framing ?? null : null });
   }
   const links: ProfileContent["links"] = [];
   for (const [index, link] of content.links.entries()) {

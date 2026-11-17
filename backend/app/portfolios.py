@@ -35,7 +35,7 @@ Database = Annotated[Session, Depends(get_db)]
 MAX_PORTFOLIOS = 5
 MIN_SLUG_LENGTH = 3
 # Keep in sync with frontend/components/templates/index.ts.
-TEMPLATE_IDS = {"editorial", "terminal", "bento", "brutalist", "blocky", "aurora", "storefront", "cinema", "desktop"}
+TEMPLATE_IDS = {"editorial", "terminal", "bento", "brutalist", "blocky", "aurora", "storefront", "cinema", "desktop", "trainer-journal"}
 # Names that would collide with site routes or look official.
 RESERVED_SLUGS = {
     "admin", "api", "app", "auth", "login", "logout", "signin", "signup", "register",
@@ -62,9 +62,19 @@ def validated_profile(content: ProfileContent, user: User, db: Session) -> dict:
     return normalize_images(document, user.id)
 
 
+def require_template_access(template_id: str, user: User) -> None:
+    if template_id == "trainer-journal" and not user.is_admin:
+        raise HTTPException(403, "Trainer Journal is available to the Portfolabs admin.")
+
+
 def validated_content(content: PortfolioContent, user: User, db: Session) -> dict:
     if content.template_id not in TEMPLATE_IDS:
         raise HTTPException(422, "Choose one of the available templates.")
+    require_template_access(content.template_id, user)
+    if content.template_id == "trainer-journal":
+        games = [project.trainer_game for project in content.projects if project.trainer_game]
+        if len(games) != len(set(games)):
+            raise HTTPException(422, "Assign each encounter to only one project.")
     document = validated_profile(content, user, db)
     if content.resume_id != user.resume_id:
         document["resume_id"] = None
@@ -231,6 +241,7 @@ def publish_portfolio(slug: str, request: Request, db: Database, background: Bac
     db.refresh(user)
     released = image_keys(user.id, portfolio.published_content) - image_keys(user.id, portfolio.draft_content)
     first_time = portfolio.published_at is None
+    require_template_access(portfolio.draft_content.get("template_id", ""), user)
     published = normalize_images(portfolio.draft_content, portfolio.owner_id)
     if published.get("resume_id") != user.resume_id:
         published["resume_id"] = None

@@ -11,7 +11,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/templates/[id]">): Promise<Metadata> {
   const template = getTemplate((await params).id);
-  return { title: template ? `${template.name} template · Portfolio Automation` : "Template not found" };
+  return { title: template && !template.adminOnly ? `${template.name} template · Portfolio Automation` : "Template not found" };
 }
 
 export default async function TemplatePage({ params }: PageProps<"/templates/[id]">) {

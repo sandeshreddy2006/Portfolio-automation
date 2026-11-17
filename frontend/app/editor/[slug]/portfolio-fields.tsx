@@ -1,5 +1,6 @@
 import { move } from "@/lib/profile";
-import type { ProfileContent } from "@/lib/portfolio";
+import { encounters, starterProjects, trainerGames } from "@/lib/trainer-journal";
+import type { ProfileContent, TrainerGame } from "@/lib/portfolio";
 import AssistButton from "./assist-button";
 import ImageField from "./image-field";
 import ResumeSections from "./resume-sections";
@@ -16,6 +17,10 @@ export default function PortfolioFields({ content, template, disabled, update }:
       <section id="sec-projects" className={styles.group}>
         <h2>Projects <span>({content.projects.length}/{MAX_PROJECTS})</span></h2>
         <p className={styles.hint}>For each one: what did you build, what was your part, and what did you learn?</p>
+        {template === "trainer-journal" && content.projects.length === 0 && (
+          <button type="button" className={styles.secondary} disabled={disabled}
+            onClick={() => update({ projects: starterProjects })}>Add the four starter encounters</button>
+        )}
         {content.projects.map((project, index) => (
           <fieldset key={index} className={styles.row}>
             <legend>Project {index + 1}</legend>
@@ -33,6 +38,18 @@ export default function PortfolioFields({ content, template, disabled, update }:
               <input type="url" inputMode="url" placeholder="https://" value={project.url ?? ""}
                 onChange={(event) => update({ projects: content.projects.map((item, at) => at === index ? { ...item, url: event.target.value } : item) })} />
             </label>
+            {template === "trainer-journal" && (
+              <label>Trainer Journal encounter
+                <select value={project.trainer_game ?? ""} disabled={disabled}
+                  onChange={(event) => {
+                    const trainer_game = (event.target.value || null) as TrainerGame | null;
+                    update({ projects: content.projects.map((item, at) => at === index ? { ...item, trainer_game } : item) });
+                  }}>
+                  <option value="">Journal only</option>
+                  {trainerGames.map((id) => <option key={id} value={id} disabled={content.projects.some((item, at) => at !== index && item.trainer_game === id)}>{encounters[id].title}</option>)}
+                </select>
+              </label>
+            )}
             <ImageField label="Project image (optional)" kind="project" template={template} value={project.image}
               hint={template === "cinema" && index === 0
                 ? "This image also becomes the Cinema backdrop. Leave it blank to use the default backdrop."
