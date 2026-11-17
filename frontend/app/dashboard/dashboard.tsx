@@ -36,7 +36,9 @@ function status(item: PortfolioSummary) {
 
 export default function Dashboard() {
   const router = useRouter();
-  const isAdmin = useAccount()?.is_admin === true;
+  const account = useAccount();
+  const isAdmin = account?.is_admin === true;
+  const firstName = account?.name.trim().split(/\s+/)[0];
   const requested = useSearchParams().get("template");
   const wantedTemplate = templateInfo.find((template) => template.id === requested)?.id;
   const [copied, setCopied] = useState("");
@@ -75,6 +77,9 @@ export default function Dashboard() {
   }, [state, creating]);
 
   const full = !isAdmin && items.length >= MAX_PORTFOLIOS;
+  const liveCount = items.filter((item) => item.published).length;
+  const latest = items.reduce<PortfolioSummary | undefined>((current, item) =>
+    !current || item.updated_at > current.updated_at ? item : current, undefined);
 
   async function copyLink(slug: string) {
     try {
@@ -137,6 +142,24 @@ export default function Dashboard() {
 
   return (
     <main className={`page-width ${styles.page}`}>
+      {state === "ready" && (
+        <section className={styles.welcome} aria-label="Workspace overview">
+          <div>
+            <p className={styles.welcomeTitle}>{firstName ? `Welcome, ${firstName}.` : "Welcome to your workspace."}</p>
+            <div className={styles.welcomeLinks}>
+              {latest && <Link className={styles.primary} href={`/editor/${latest.slug}`}>Continue editing <span aria-hidden="true">↗</span></Link>}
+              <Link className={styles.secondary} href="/profile">Edit profile</Link>
+              <Link className={styles.secondary} href="/templates">Browse templates</Link>
+            </div>
+          </div>
+          {items.length > 0 && (
+            <div className={styles.workspaceSummary}>
+              <p><strong>{liveCount}</strong> live <span aria-hidden="true">·</span> <strong>{items.length - liveCount}</strong> drafts</p>
+              {latest && <p>Last edited <strong>{latest.name}</strong></p>}
+            </div>
+          )}
+        </section>
+      )}
       <div className={styles.titleRow}>
         <div>
           <h1 className={styles.title}>Your portfolios</h1>

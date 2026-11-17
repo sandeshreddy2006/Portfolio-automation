@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { backendUrl } from "@/lib/backend";
+import { authCookieHeader, authHeaders } from "./app/api/auth/backend";
 
 const RESERVED = new Set(["www", "api", "app", "assets", "mail", "admin", "auth", "dashboard", "editor"]);
 const SLUG = /^[a-z0-9-]{3,64}$/;
@@ -18,20 +19,42 @@ function platformHost(host: string, root: string) {
     || host.endsWith(".vercel.app") || host === "localhost" || host === "127.0.0.1" || extra.includes(host);
 }
 
+async function signedInHome(request: NextRequest) {
+  if (request.method !== "GET" || request.nextUrl.pathname !== "/" || request.nextUrl.searchParams.has("auth")) return null;
+  const cookie = authCookieHeader(request);
+  if (!/(?:^|; )(?:__Host-)?portfolabs_session=/.test(cookie)) return null;
+  const endpoint = backendUrl("/api/auth/session");
+  if (!endpoint) return null;
+
+  try {
+    const response = await fetch(endpoint, {
+      headers: { Cookie: cookie }, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(2500),
+    });
+    if (response.ok && (await response.json())?.id) {
+      return NextResponse.redirect(new URL("/dashboard", request.url), { headers: authHeaders });
+    }
+  } catch {
+    // The homepage stays available if the account service is down.
+  }
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
   const root = process.env.ROOT_DOMAIN?.toLowerCase() ?? "";
   const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase().replace(/\.$/, "");
   const path = request.nextUrl.pathname;
+  const isPlatform = platformHost(host, root);
 
   if (root && host.endsWith(`.${root}`)) {
     const subdomain = host.slice(0, -(root.length + 1));
     if (path === "/" && SLUG.test(subdomain) && !RESERVED.has(subdomain)) {
       return NextResponse.rewrite(new URL(`/p/${subdomain}`, request.url));
     }
-    return NextResponse.next();
+    if (!isPlatform) return NextResponse.next();
   }
 
-  if (process.env.PORTFOLABS_CUSTOM_DOMAINS !== "1" || platformHost(host, root)) return NextResponse.next();
+  if (isPlatform) return (await signedInHome(request)) ?? NextResponse.next();
+  if (process.env.PORTFOLABS_CUSTOM_DOMAINS !== "1") return NextResponse.next();
   if (!host || (request.method !== "GET" && request.method !== "HEAD")) return missing();
   if (PUBLIC_FILE.test(path)) return NextResponse.next();
   if (path !== "/" && path !== "/resume" && !/^\/p\/[a-z0-9-]+\/resume$/.test(path)) return missing();

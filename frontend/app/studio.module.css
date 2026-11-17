@@ -4,6 +4,24 @@
 .lead { margin-top: 10px; margin-bottom: 20px; max-width: 52ch; color: var(--muted); font-size: 17px; line-height: 1.5; }
 .titleRow .lead { margin-bottom: 0; }
 
+.welcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: clamp(24px, 5vw, 52px);
+  padding: clamp(18px, 4vw, 38px);
+  border: 1px solid #cad6ab;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 100% 0, #e4f6a9, transparent 65%), #f0f4df;
+}
+.welcomeTitle { font-size: clamp(28px, 5vw, 53px); font-weight: 760; line-height: 1.1; letter-spacing: -.05em; overflow-wrap: anywhere; }
+.welcomeLinks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.workspaceSummary { max-width: 38ch; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.workspaceSummary p + p { margin-top: 5px; }
+.workspaceSummary strong { color: var(--ink); }
+
 .primary, .secondary, .danger {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px 16px; border: 1px solid var(--line); border-radius: 6px;
