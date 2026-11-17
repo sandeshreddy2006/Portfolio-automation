@@ -127,7 +127,6 @@
   box-shadow: 0 14px 35px #1b113567, inset 0 1px #fff;
 }
 .window[data-active="true"] { box-shadow: 0 22px 55px #170c447b, inset 0 1px #fff; }
-.window[hidden] { display: none; }
 .window:focus { outline: none; }
 .titlebar {
   position: relative;
@@ -173,7 +172,6 @@
 .linkList a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 
 .handle, .controls { display: none; }
-.root[data-enhanced] .app > summary { display: none; }
 .root[data-enhanced] .shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 4px; }
 .root[data-enhanced] .controls { display: flex; }
 .launcher { position: relative; flex: none; }
@@ -286,13 +284,13 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .app[open] .window { animation: open-window 190ms cubic-bezier(.2,.8,.25,1) both; }
+  .apps > .window, .app[open] .window { animation: open-window 190ms ease-out; }
   .icon { transition: transform 160ms ease; }
   .shortcut:is(:hover, :focus-visible) .icon { transform: translateY(-3px); }
   .dockApp:is(:hover, :focus-visible) .icon { transform: translateY(-2px) scale(1.09); }
 }
 
 @keyframes open-window {
-  from { opacity: 0; transform: scale(.97); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

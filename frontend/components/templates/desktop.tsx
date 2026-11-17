@@ -150,7 +150,7 @@ export function Desktop({ content, resumeHref }: { content: PortfolioContent; re
 
   function beginDrag(event: PointerEvent<HTMLButtonElement>, id: string) {
     const panel = event.currentTarget.closest<HTMLElement>("[data-window]");
-    if (!panel || event.button !== 0 || windows[id].maximized || !matchMedia("(min-width: 761px)").matches) return;
+    if (!panel || !windows[id] || event.button !== 0 || windows[id].maximized || !matchMedia("(min-width: 761px)").matches) return;
     const { x, y } = windows[id];
     const { maxX, maxY } = bounds(panel);
     drag.current = {
@@ -172,7 +172,7 @@ export function Desktop({ content, resumeHref }: { content: PortfolioContent; re
   function moveWithKeys(event: KeyboardEvent<HTMLButtonElement>, id: string) {
     const vector = vectors[event.key];
     const panel = event.currentTarget.closest<HTMLElement>("[data-window]");
-    if (!vector || !panel || windows[id].maximized || !matchMedia("(min-width: 761px)").matches) return;
+    if (!vector || !panel || !windows[id] || windows[id].maximized || !matchMedia("(min-width: 761px)").matches) return;
     event.preventDefault();
     const { maxX, maxY } = bounds(panel);
     const { x, y } = windows[id];
@@ -219,33 +219,40 @@ export function Desktop({ content, resumeHref }: { content: PortfolioContent; re
           {apps.map((app) => {
             const item = windows[app.id];
             const isActive = app.id === active;
+            if (enhanced && (!item || item.minimized)) return null;
+
+            const panel = (
+              <section key={app.id} id={`${prefix}-${app.id}-window`} className={styles.window} data-window data-active={isActive}
+                data-maximized={item?.maximized || undefined} aria-label={app.label} tabIndex={enhanced ? -1 : undefined}
+                style={item && enhanced ? { "--x": `${item.x}px`, "--y": `${item.y}px`, zIndex: item.z } as CSSProperties : undefined}
+                onPointerDown={() => { if (enhanced && !isActive) changeWindow(app.id, { z: ++stack.current }); }}
+                onFocus={() => { if (enhanced && !isActive) changeWindow(app.id, { z: ++stack.current }); }}
+                onKeyDown={(event) => { if (enhanced && event.key === "Escape") { event.stopPropagation(); closeApp(app.id); } }}>
+                <div className={styles.titlebar}>
+                  <span className={styles.staticTitle}>{app.label}</span>
+                  <button type="button" className={styles.handle} aria-label={`Move ${app.label} window with arrow keys`}
+                    onPointerDown={(event) => beginDrag(event, app.id)} onPointerMove={moveDrag}
+                    onLostPointerCapture={() => { drag.current = null; }}
+                    onKeyDown={(event) => moveWithKeys(event, app.id)}>{app.label}</button>
+                  <div className={styles.controls}>
+                    <button type="button" className={styles.close} aria-label={`Close ${app.label}`} onClick={() => closeApp(app.id)}><span aria-hidden="true">×</span></button>
+                    <button type="button" className={styles.minimize} aria-label={`Minimize ${app.label}`} onClick={() => minimizeApp(app.id)}><span aria-hidden="true">−</span></button>
+                    <button type="button" className={styles.maximize} aria-label={`${item?.maximized ? "Restore" : "Maximize"} ${app.label}`}
+                      onClick={() => changeWindow(app.id, { maximized: !item?.maximized })}><span aria-hidden="true">{item?.maximized ? "−" : "+"}</span></button>
+                  </div>
+                </div>
+                <div className={styles.body}>{app.body}</div>
+              </section>
+            );
+            if (enhanced) return panel;
+
             return (
               <details key={app.id} className={styles.app} open={Boolean(item)}>
                 <summary className={styles.shortcut}>
                   <span className={styles.icon} data-kind={app.icon} aria-hidden="true">{icons[app.icon]}</span>
                   <span>{app.label}</span>
                 </summary>
-                <section id={`${prefix}-${app.id}-window`} className={styles.window} data-window data-active={isActive}
-                  data-maximized={item?.maximized || undefined} hidden={item?.minimized} aria-label={app.label} tabIndex={enhanced ? -1 : undefined}
-                  style={item && enhanced ? { "--x": `${item.x}px`, "--y": `${item.y}px`, zIndex: item.z } as CSSProperties : undefined}
-                  onPointerDown={() => { if (enhanced && !isActive) openApp(app.id); }}
-                  onFocus={() => { if (enhanced && !isActive) openApp(app.id); }}
-                  onKeyDown={(event) => { if (enhanced && event.key === "Escape") { event.stopPropagation(); closeApp(app.id); } }}>
-                  <div className={styles.titlebar}>
-                    <span className={styles.staticTitle}>{app.label}</span>
-                    <button type="button" className={styles.handle} aria-label={`Move ${app.label} window with arrow keys`}
-                      onPointerDown={(event) => beginDrag(event, app.id)} onPointerMove={moveDrag}
-                      onLostPointerCapture={() => { drag.current = null; }}
-                      onKeyDown={(event) => moveWithKeys(event, app.id)}>{app.label}</button>
-                    <div className={styles.controls}>
-                      <button type="button" className={styles.close} aria-label={`Close ${app.label}`} onClick={() => closeApp(app.id)}><span aria-hidden="true">×</span></button>
-                      <button type="button" className={styles.minimize} aria-label={`Minimize ${app.label}`} onClick={() => minimizeApp(app.id)}><span aria-hidden="true">−</span></button>
-                      <button type="button" className={styles.maximize} aria-label={`${item?.maximized ? "Restore" : "Maximize"} ${app.label}`}
-                        onClick={() => changeWindow(app.id, { maximized: !item?.maximized })}><span aria-hidden="true">{item?.maximized ? "−" : "+"}</span></button>
-                    </div>
-                  </div>
-                  <div className={styles.body}>{app.body}</div>
-                </section>
+                {panel}
               </details>
             );
           })}
