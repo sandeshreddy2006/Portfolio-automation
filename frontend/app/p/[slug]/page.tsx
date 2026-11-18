@@ -50,8 +50,12 @@ async function Portfolio({ params }: { params: PageProps<"/p/[slug]">["params"] 
             <span aria-hidden="true">·</span>
           </>
         )}
-        <Link href={SITE_URL}>Made with Portfolabs</Link>
-        <span aria-hidden="true">·</span>
+        {portfolio.show_branding !== false && (
+          <>
+            <Link href={SITE_URL}>Made with Portfolabs</Link>
+            <span aria-hidden="true">·</span>
+          </>
+        )}
         <Link href={`${SITE_URL}/report?slug=${slug}`} rel="nofollow">Report</Link>
       </footer>
       <footer className={styles.credits}><Credits /></footer>

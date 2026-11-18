@@ -115,6 +115,7 @@ class PublicPortfolio(BaseModel):
     slug: Slug
     published_content: PortfolioContent
     published_at: datetime
+    show_branding: bool = True
 
 
 Password = Annotated[str, StringConstraints(min_length=8, max_length=128)]

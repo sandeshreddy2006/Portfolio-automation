@@ -6,7 +6,7 @@ export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.portfolabs.com";
 
-export type Published = { slug: string; published_content: PortfolioContent; published_at: string };
+export type Published = { slug: string; published_content: PortfolioContent; published_at: string; show_branding?: boolean };
 
 /** Cached until the owner publishes, unpublishes or deletes (see app/api/portfolios). */
 export async function getPublished(slug: string): Promise<Published | null> {

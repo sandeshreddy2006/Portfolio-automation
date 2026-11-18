@@ -57,6 +57,18 @@ def test_configured_admin_has_unlimited_slots_with_normal_ownership(client, monk
     assert len(admin.get("/api/portfolios").json()) == 6
 
 
+def test_public_branding_depends_on_owner_not_viewer(client, monkeypatch):
+    monkeypatch.setenv("PORTFOLABS_ADMIN_EMAIL", "admin@example.com")
+    admin = login_as(make_user("admin@example.com"))
+    owner = login_as(make_user("owner@example.com"))
+    assert create(admin, slug="admin-site").status_code == 201
+    assert create(owner, slug="owner-site").status_code == 201
+    assert admin.post("/api/portfolios/admin-site/publish").status_code == 200
+    assert owner.post("/api/portfolios/owner-site/publish").status_code == 200
+    assert client.get("/api/public/admin-site").json()["show_branding"] is False
+    assert admin.get("/api/public/owner-site").json()["show_branding"] is True
+
+
 def test_trainer_journal_requires_admin_and_preserves_encounters(client, monkeypatch):
     monkeypatch.setenv("PORTFOLABS_ADMIN_EMAIL", "admin@example.com")
     admin = login_as(make_user("admin@example.com"))

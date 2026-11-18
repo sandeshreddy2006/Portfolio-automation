@@ -326,6 +326,7 @@ def public_portfolio(slug: str, db: Database):
     if portfolio is None or portfolio.published_content is None:
         raise HTTPException(404, "Portfolio not found.")
     published = normalize_images(portfolio.published_content, portfolio.owner_id)
+    owner = db.get(User, portfolio.owner_id)
     if published.get("resume_id") and published["resume_id"] != db.scalar(
         select(User.resume_id).where(User.id == portfolio.owner_id)
     ):
@@ -334,4 +335,5 @@ def public_portfolio(slug: str, db: Database):
         "slug": portfolio.slug,
         "published_at": portfolio.published_at,
         "published_content": published,
+        "show_branding": not (owner and owner.is_admin),
     }
