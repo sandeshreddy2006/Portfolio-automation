@@ -81,7 +81,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   }
 
   function interact() {
-    if (published && Math.abs(7 - position[0]) + Math.abs(5 - position[1]) <= 1) {
+    if (published && Math.abs(8 - position[0]) + Math.abs(4 - position[1]) <= 1) {
       setActive("published-site");
       return;
     }
@@ -154,7 +154,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
               <div aria-hidden="true" className={styles.path} />
               <div aria-hidden="true" className={styles.pond} />
               <div aria-hidden="true" className={styles.plaza} />
-              {treePositions.map(([x, y]) => <span key={`${x}-${y}`} aria-hidden="true" className={styles.tree} style={mapPoint(x, y)} />)}
+              {treePositions.filter(([x, y]) => !published || x !== 8 || y !== 4).map(([x, y]) => <span key={`${x}-${y}`} aria-hidden="true" className={styles.tree} style={mapPoint(x, y)} />)}
               {entries.map(({ game, title, color, position: [x, y] }) => (
                 <button type="button" key={game} className={styles.building} data-game={game} style={{ ...mapPoint(x, y), "--roof": color } as CSSProperties}
                   aria-label={`Enter ${title}`} onClick={() => visit(game)}>
@@ -166,7 +166,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
                 <div className={styles.homestead}>
                   <span className={styles.homePath} aria-hidden="true" />
                   <button type="button" className={styles.playerSite} aria-label="Enter Sandesh’s portfolio"
-                    onClick={() => { setPosition([7, 5]); setActive("published-site"); }}>
+                    onClick={() => { setPosition([8, 4]); setActive("published-site"); }}>
                     <span className={styles.homeHouse} aria-hidden="true"><i /><i /><b /></span>
                     <span>Sandesh’s portfolio</span>
                   </button>

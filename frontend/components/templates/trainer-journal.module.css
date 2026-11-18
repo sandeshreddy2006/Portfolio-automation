@@ -146,8 +146,8 @@
   background: linear-gradient(#26332a 0 8%, #d95349 8% 25%, #572728 25% 34%, #f7cf9a 34% 54%, #e4ebc9 54% 73%, #3c4c72 73% 90%, #232b26 90%);
   pointer-events: none; clip-path: polygon(18% 0, 82% 0, 82% 10%, 100% 10%, 100% 68%, 82% 68%, 82% 100%, 18% 100%, 18% 68%, 0 68%, 0 10%, 18% 10%);
 }
-.root button:not(.building) { padding: 7px 11px; border: 1px solid var(--button-line); border-radius: 5px; background: var(--button); color: var(--ink); box-shadow: 0 2px var(--button-shade); font-size: 13px; font-weight: 700; cursor: pointer; }
-.root button:not(.building):hover, .root button[aria-pressed="true"] { background: var(--gold); }
+.root button:not(.building, .playerSite) { padding: 7px 11px; border: 1px solid var(--button-line); border-radius: 5px; background: var(--button); color: var(--ink); box-shadow: 0 2px var(--button-shade); font-size: 13px; font-weight: 700; cursor: pointer; }
+.root button:not(.building, .playerSite):hover, .root button[aria-pressed="true"] { background: var(--gold); }
 .root button:disabled { opacity: .6; cursor: not-allowed; }
 .pad { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 14px 10px; background: var(--console); }
 .pad button { min-height: 38px; }
@@ -417,17 +417,17 @@
 
 .homestead { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .homePath {
-  position: absolute; left: 50%; top: 67%; width: 14%; height: 8%;
+  position: absolute; left: 56%; top: 61%; width: 16%; height: 6%;
   border-block: 2px solid #cfb27e;
   background: repeating-linear-gradient(90deg, #f3d79b 0 12px, #dfbf82 12px 14px);
 }
 .root .playerSite {
   position: absolute;
-  left: 62.5%; top: 68.75%;
+  left: 70.8333%; top: 56.25%;
   display: grid; justify-items: center; gap: 4px;
   width: min(27%, 155px);
   padding: 0;
-  translate: -50% -68%;
+  translate: -50% -50%;
   border: 0; background: transparent; box-shadow: none;
   color: #293d4c;
   pointer-events: auto;
