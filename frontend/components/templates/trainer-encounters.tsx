@@ -114,7 +114,7 @@ function Workshop({ finish, published, publish }: { finish: Finish; published: T
       </select></label>
       <label>Draft headline<input value={headline} maxLength={75} onChange={(event) => setHeadline(event.target.value)} /></label>
       <label>Design<select value={theme} onChange={(event) => setTheme(event.target.value)}><option>Cinema</option><option>Desktop</option><option>Terminal</option></select></label>
-      <button type="button" disabled={company !== "Signal Studio" || !headline.trim()} onClick={() => publish({ name: "Mira Tan", headline: headline.trim(), theme })}>
+      <button type="button" disabled={company !== "Signal Studio" || !headline.trim()} onClick={() => publish({ name: "Sandesh", headline: headline.trim(), theme })}>
         {published ? "Publish update" : "Publish mini portfolio"}
       </button>
       {published && <MiniPortfolio portfolio={published} />}

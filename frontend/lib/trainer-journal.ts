@@ -26,7 +26,7 @@ export const encounters = {
     color: "#7b9ac6", position: [2, 6],
   },
   workshop: {
-    title: "Portfolio Workshop", project: "Portfolabs", badge: "Publisher", guide: "Mira Tan",
+    title: "Portfolio Workshop", project: "Portfolabs", badge: "Publisher", guide: "Sandesh",
     description: "Correct a résumé import, pick a design, and publish a miniature portfolio into the town.",
     signature: "Separate draft and published versions",
     fieldNote: "A stable address can point to a published snapshot while the owner keeps editing privately.",

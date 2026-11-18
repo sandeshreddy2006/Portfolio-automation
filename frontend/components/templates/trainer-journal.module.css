@@ -110,7 +110,7 @@
 }
 .root[data-night] :is(.path, .plaza, .pond, .tree) { filter: brightness(.55) saturate(.78) hue-rotate(15deg); }
 .root[data-night] .house { filter: brightness(.72) saturate(.8); }
-.root[data-night] .house i { background: #ffea91; box-shadow: 0 0 7px #ffdd6999; }
+.root[data-night] :is(.house, .homeHouse) i { background: #ffea91; box-shadow: 0 0 7px #ffdd6999; }
 .root[data-night] .building > span:last-child { background: #20364a; color: #f5e8b0; box-shadow: 0 2px #121e2e; }
 .path {
   position: absolute; inset: 0;
@@ -146,7 +146,6 @@
   background: linear-gradient(#26332a 0 8%, #d95349 8% 25%, #572728 25% 34%, #f7cf9a 34% 54%, #e4ebc9 54% 73%, #3c4c72 73% 90%, #232b26 90%);
   pointer-events: none; clip-path: polygon(18% 0, 82% 0, 82% 10%, 100% 10%, 100% 68%, 82% 68%, 82% 100%, 18% 100%, 18% 68%, 0 68%, 0 10%, 18% 10%);
 }
-.playerSite { position: absolute; z-index: 3; left: 42%; bottom: 5%; }
 .root button:not(.building) { padding: 7px 11px; border: 1px solid var(--button-line); border-radius: 5px; background: var(--button); color: var(--ink); box-shadow: 0 2px var(--button-shade); font-size: 13px; font-weight: 700; cursor: pointer; }
 .root button:not(.building):hover, .root button[aria-pressed="true"] { background: var(--gold); }
 .root button:disabled { opacity: .6; cursor: not-allowed; }
@@ -216,15 +215,13 @@
 .trainer i { position: absolute; top: 39%; width: 2px; height: 3px; background: #342522; }
 .trainer i:first-child { left: 31%; }
 .trainer i:last-child { right: 31%; }
-.playerSite { display: grid; justify-items: center; gap: 4px; }
-.playerSite i { width: 23px; height: 18px; border: 2px solid #4c623b; background: linear-gradient(#aadc74 0 44%, #f6dfa4 44%); }
 
 @media (prefers-reduced-motion: no-preference) {
   .map { transition: background-color 420ms ease; }
   :is(.path, .plaza, .pond, .tree, .house) { transition: filter 320ms ease; }
   .pond {
     background-size: 52px 52px;
-    animation: water-ripple 1350ms steps(7) 3;
+    animation: water-ripple 1350ms steps(7) infinite;
   }
   .building .house { transition: transform 170ms steps(3), filter 260ms ease; }
   .building:is(:hover, :focus-visible) .house { transform: translateY(-5px); }
@@ -416,4 +413,42 @@
 }
 @media (max-width: 720px) {
   .entries { grid-template-columns: minmax(0, 1fr); }
+}
+
+.homestead { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
+.homePath {
+  position: absolute; left: 50%; top: 67%; width: 14%; height: 8%;
+  border-block: 2px solid #cfb27e;
+  background: repeating-linear-gradient(90deg, #f3d79b 0 12px, #dfbf82 12px 14px);
+}
+.root .playerSite {
+  position: absolute;
+  left: 62.5%; top: 68.75%;
+  display: grid; justify-items: center; gap: 4px;
+  width: min(27%, 155px);
+  padding: 0;
+  translate: -50% -68%;
+  border: 0; background: transparent; box-shadow: none;
+  color: #293d4c;
+  pointer-events: auto;
+  font: 400 clamp(13px, 2vw, 19px)/1 var(--pixel-text);
+}
+.root .playerSite:hover { background: transparent; }
+.playerSite > span:last-child { padding: 4px 6px; border-radius: 3px; background: #ffedb9; box-shadow: 0 2px #59694d; }
+.homeHouse {
+  position: relative; display: flex; justify-content: center; align-items: center; gap: 9px;
+  width: clamp(48px, 8vw, 79px); height: clamp(35px, 6vw, 57px);
+  border: 3px solid #3e4852;
+  background: linear-gradient(#d57866 0 31%, #824d49 31% 39%, #f4e7c7 39%);
+  box-shadow: 0 4px #5a6c45;
+  clip-path: polygon(10% 0, 90% 0, 90% 9%, 100% 9%, 100% 100%, 0 100%, 0 9%, 10% 9%);
+}
+.homeHouse i { width: 15%; height: 20%; margin-top: 14%; border: 1px solid #6f6252; background: #c2e4ef; }
+.homeHouse b { position: absolute; bottom: 0; width: 18%; height: 28%; background: #6c7685; }
+.root[data-night] .homePath { filter: brightness(.55) saturate(.78) hue-rotate(15deg); }
+.root[data-night] .homeHouse { filter: brightness(.72) saturate(.8); }
+.root[data-night] .playerSite > span:last-child { background: #20364a; color: #f5e8b0; box-shadow: 0 2px #121e2e; }
+@media (prefers-reduced-motion: no-preference) {
+  .homeHouse { transition: transform 170ms steps(3); }
+  .playerSite:is(:hover, :focus-visible) .homeHouse { transform: translateY(-3px); }
 }

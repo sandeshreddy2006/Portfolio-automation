@@ -81,7 +81,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   }
 
   function interact() {
-    if (published && Math.abs(5 - position[0]) + Math.abs(7 - position[1]) <= 1) {
+    if (published && Math.abs(7 - position[0]) + Math.abs(5 - position[1]) <= 1) {
       setActive("published-site");
       return;
     }
@@ -162,7 +162,16 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
                 </button>
               ))}
               <span className={styles.trainer} aria-hidden="true" style={mapPoint(...position)}><i /><i /></span>
-              {published && <button type="button" className={styles.playerSite} onClick={() => { setPosition([5, 7]); setActive("published-site"); }}><i aria-hidden="true" />Mira’s portfolio</button>}
+              {published && (
+                <div className={styles.homestead}>
+                  <span className={styles.homePath} aria-hidden="true" />
+                  <button type="button" className={styles.playerSite} aria-label="Enter Sandesh’s portfolio"
+                    onClick={() => { setPosition([7, 5]); setActive("published-site"); }}>
+                    <span className={styles.homeHouse} aria-hidden="true"><i /><i /><b /></span>
+                    <span>Sandesh’s portfolio</span>
+                  </button>
+                </div>
+              )}
             </div>
             <div className={styles.consoleFoot}>
               <p>{entries.length ? "Use the arrow keys or tap a building to visit." : "Assign encounters to projects in the editor to open the town’s buildings."}</p>
@@ -238,7 +247,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
           <header>
             <div>
               <p className={styles.kicker}>{selected?.portfolioProject.title ?? "Signal Town"}</p>
-              <h2 id="encounter-title">{selected?.title ?? "Mira’s portfolio"}</h2>
+              <h2 id="encounter-title">{selected?.title ?? "Sandesh’s portfolio"}</h2>
             </div>
             <button type="button" aria-label="Close encounter" onClick={() => dialog.current?.close()}>×</button>
           </header>
