@@ -3,7 +3,7 @@
 import { Press_Start_2P, VT323 } from "next/font/google";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent } from "react";
 import { encounters, trainerGames } from "@/lib/trainer-journal";
-import { paragraphs, safeHref, type PortfolioContent, type TrainerGame } from "@/lib/portfolio";
+import { paragraphs, safeHref, safeImage, type PortfolioContent, type TrainerGame } from "@/lib/portfolio";
 import { CareerSections } from "./career-sections";
 import { MiniPortfolio, TrainerEncounter, type TownPortfolio } from "./trainer-encounters";
 import { UserImage } from "./user-image";
@@ -190,14 +190,22 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
               const href = safeHref(project.url);
               return (
                 <article key={index} className={styles.entry}>
+                  <header className={styles.entryHeader}>
                   {encounter && <p className={styles.entryLabel} data-earned={game && badges.includes(game) || undefined}>
                     {game && badges.includes(game) ? `${encounter.badge} badge earned` : encounter.title}
                   </p>}
                   <h3>{project.title}</h3>
-                  <UserImage src={project.image} framing={project.image_framing} className={styles.cover} />
+                  </header>
+                  {safeImage(project.image) ? (
+                    <UserImage src={project.image} framing={project.image_framing} className={styles.cover} />
+                  ) : (
+                    <div className={styles.coverPlaceholder} aria-hidden="true">{String(index + 1).padStart(2, "0")}</div>
+                  )}
+                  <div className={styles.entryBody}>
                   {project.description && <p className="portfolio-formatted-text">{project.description}</p>}
                   {encounter && <p><strong>Signature move</strong> · {encounter.signature}</p>}
                   {encounter && game && badges.includes(game) && <p className={styles.fieldNote}><strong>Field note</strong> · {encounter.fieldNote}</p>}
+                  </div>
                   <div className={styles.entryActions}>
                     {enhanced && game && <button type="button" onClick={() => visit(game)}>Play encounter</button>}
                     {href && <a href={href} target="_blank" rel="noopener noreferrer">Open project ↗</a>}
