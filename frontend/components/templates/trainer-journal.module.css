@@ -417,12 +417,12 @@
 
 .homestead { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .homePath {
-  position: absolute; left: 56%; top: 64%; width: 16.8333%; height: 5%;
+  position: absolute; left: 57%; top: 68%; width: 15.8333%; height: 4%;
   border-block: 2px solid #cfb27e;
   background: #f3d79b;
 }
 .homeApproach {
-  position: absolute; left: 68.8333%; top: 61%; width: 4%; height: 8%;
+  position: absolute; left: 68.8333%; top: 61%; width: 4%; height: 11%;
   border-inline: 2px solid #cfb27e;
   background: #f3d79b;
 }
