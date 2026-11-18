@@ -32,6 +32,8 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   const enhanced = useSyncExternalStore(subscribe, client, server);
   const [position, setPosition] = useState<[number, number]>([5, 5]);
   const [night, setNight] = useState(false);
+  const [visitorCharacter, setVisitorCharacter] = useState("scout");
+  const character = content.trainer_character === "all" ? visitorCharacter : (content.trainer_character ?? "scout");
   const [boot, setBoot] = useState(true);
   const [active, setActive] = useState<TrainerGame | "published-site">();
   const [badges, setBadges] = useState<TrainerGame[]>([]);
@@ -111,7 +113,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
   }
 
   return (
-    <main className={`${styles.root} ${pixelTitle.variable} ${pixelText.variable}`} data-night={night || undefined}>
+    <main className={`${styles.root} ${pixelTitle.variable} ${pixelText.variable}`} data-night={night || undefined} data-character={character}>
       {enhanced && boot && portfolioKey && (
         <dialog ref={opening} className={styles.boot} aria-label="Trainer Journal intro" onClose={() => setBoot(false)}>
           <div className={styles.bootStage}>
@@ -143,6 +145,17 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
           </div>
           <UserImage src={content.avatar} framing={content.avatar_framing} className={styles.avatar} />
         </section>
+        {content.trainer_character === "all" && (
+          <fieldset className={styles.characterPicker}>
+            <legend>Choose your character</legend>
+            {[["scout", "Scout"], ["ranger", "Ranger"], ["researcher", "Researcher"], ["navigator", "Navigator"]].map(([id, label]) => (
+              <button key={id} type="button" aria-pressed={character === id} onClick={() => setVisitorCharacter(id)}>
+                <span className={styles.characterPreview} data-character={id} aria-hidden="true"><span className={styles.trainer}><i /><i /></span></span>
+                {label}
+              </button>
+            ))}
+          </fieldset>
+        )}
         <nav className={styles.recruiterPath} aria-label="Recruiter quick links">
           {resumeHref && (
             <a href={resumeHref} download="resume.pdf">

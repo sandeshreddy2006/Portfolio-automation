@@ -323,6 +323,19 @@ export default function Editor({ slug }: { slug: string }) {
           <section id="sec-visibility" className={styles.group}>
             <h2>Publish settings</h2>
             {content.template_id === "trainer-journal" && (
+              <label>Playable character
+                <select disabled={busy !== ""} value={content.trainer_character ?? "scout"}
+                  onChange={(event) => update({ trainer_character: event.target.value as PortfolioContent["trainer_character"] })}>
+                  <option value="scout">Scout · red cap</option>
+                  <option value="ranger">Ranger · green hat</option>
+                  <option value="researcher">Researcher · purple hair and lab coat</option>
+                  <option value="navigator">Navigator · blue cap and yellow jacket</option>
+                  <option value="all">All · let visitors choose</option>
+                </select>
+                <small>Choose a fixed character, or enable all four on your live website. Publish to apply changes.</small>
+              </label>
+            )}
+            {content.template_id === "trainer-journal" && (
               <label>Public contact email (optional)
                 <input type="email" maxLength={254} disabled={busy !== ""} value={content.trainer_contact_email ?? ""}
                   onChange={(event) => update({ trainer_contact_email: event.target.value.trim() || null })} />

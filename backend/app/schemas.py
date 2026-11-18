@@ -74,6 +74,7 @@ class ProfileDetails(BaseModel):
 class PortfolioContent(ProfileContent):
     template_id: Slug
     trainer_contact_email: EmailStr | None = None
+    trainer_character: Literal["scout", "ranger", "researcher", "navigator", "all"] = "scout"
     search_visible: bool = False
     resume_id: ResumeId | None = None
 

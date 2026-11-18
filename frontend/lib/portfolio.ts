@@ -37,6 +37,7 @@ export type ProfileDetails = { content: ProfileContent; email: string; google_co
 export type PortfolioContent = ProfileContent & {
   template_id: string;
   trainer_contact_email?: string | null;
+  trainer_character?: "scout" | "ranger" | "researcher" | "navigator" | "all";
   /** Whether search engines may list the public page. Off unless the owner opts in. */
   search_visible?: boolean;
   resume_id?: string | null;

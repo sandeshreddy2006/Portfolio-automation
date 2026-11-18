@@ -143,7 +143,7 @@
 .building:is(:hover, :focus-visible) .house { filter: brightness(1.15); }
 .trainer {
   position: absolute; z-index: 3; width: 25px; height: 31px; translate: -50% -36%;
-  background: linear-gradient(#26332a 0 8%, #d95349 8% 25%, #572728 25% 34%, #f7cf9a 34% 54%, #e4ebc9 54% 73%, #3c4c72 73% 90%, #232b26 90%);
+  background: var(--character-sprite, linear-gradient(#26332a 0 8%, #d95349 8% 25%, #572728 25% 34%, #f7cf9a 34% 54%, #e4ebc9 54% 73%, #3c4c72 73% 90%, #232b26 90%));
   pointer-events: none; clip-path: polygon(18% 0, 82% 0, 82% 10%, 100% 10%, 100% 68%, 82% 68%, 82% 100%, 18% 100%, 18% 68%, 0 68%, 0 10%, 18% 10%);
 }
 .root button:not(.building, .playerSite) { padding: 7px 11px; border: 1px solid var(--button-line); border-radius: 5px; background: var(--button); color: var(--ink); box-shadow: 0 2px var(--button-shade); font-size: 13px; font-weight: 700; cursor: pointer; }
@@ -489,3 +489,18 @@
     width: 100px;
   }
 }
+
+.root[data-character="scout"], .characterPreview[data-character="scout"] { --character-sprite: linear-gradient(#26332a 0 8%, #d95349 8% 25%, #572728 25% 34%, #f7cf9a 34% 54%, #e4ebc9 54% 73%, #3c4c72 73% 90%, #232b26 90%); }
+
+.root[data-character="ranger"], .characterPreview[data-character="ranger"] { --character-sprite: linear-gradient(#284933 0 8%, #589c51 8% 25%, #284933 25% 34%, #bc835c 34% 54%, #ebaa48 54% 73%, #325941 73% 90%, #232b26 90%); }
+
+.root[data-character="researcher"], .characterPreview[data-character="researcher"] { --character-sprite: linear-gradient(#4f365e 0 8%, #9767ad 8% 25%, #4f365e 25% 34%, #e4ad85 34% 54%, #f7f5e8 54% 73%, #69568c 73% 90%, #232b26 90%); }
+
+.root[data-character="navigator"], .characterPreview[data-character="navigator"] { --character-sprite: linear-gradient(#24374d 0 8%, #4b97c7 8% 25%, #24374d 25% 34%, #885a40 34% 54%, #f6d763 54% 73%, #426994 73% 90%, #232b26 90%); }
+
+.characterPicker { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 24px; padding: 14px; border: 2px solid var(--line); background: var(--panel); border-radius: 6px; }
+.characterPicker legend { padding: 0 8px; font: 400 24px var(--pixel-text); color: var(--accent); }
+.root .characterPicker button { display: flex; align-items: center; gap: 9px; min-height: 52px; }
+.characterPicker button[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.characterPreview { position: relative; display: inline-block; width: 29px; height: 36px; }
+.characterPreview .trainer { left: 50%; top: 50%; translate: -50% -50%; }
