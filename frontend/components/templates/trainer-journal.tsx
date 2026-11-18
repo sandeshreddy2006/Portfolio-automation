@@ -165,6 +165,7 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
               {published && (
                 <div className={styles.homestead}>
                   <span className={styles.homePath} aria-hidden="true" />
+                  <span className={styles.homeApproach} aria-hidden="true" />
                   <button type="button" className={styles.playerSite} aria-label="Enter Sandesh’s portfolio"
                     onClick={() => { setPosition([8, 4]); setActive("published-site"); }}>
                     <span className={styles.homeHouse} aria-hidden="true"><i /><i /><b /></span>
