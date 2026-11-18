@@ -34,6 +34,15 @@ def test_unknown_template_is_rejected(client):
     assert create(owner, template_id="not-real").status_code == 422
 
 
+def test_astral_nexus_can_be_created_and_published(client):
+    owner = login_as(make_user())
+    assert create(owner, template_id="astral-nexus", trainer_contact_email="hello@example.com").status_code == 201
+    assert owner.post("/api/portfolios/alex/publish").status_code == 200
+    published = client.get("/api/public/alex").json()["published_content"]
+    assert published["template_id"] == "astral-nexus"
+    assert published["trainer_contact_email"] == "hello@example.com"
+
+
 def test_limit_of_five_per_user(client):
     owner = login_as(make_user())
     for number in range(5):

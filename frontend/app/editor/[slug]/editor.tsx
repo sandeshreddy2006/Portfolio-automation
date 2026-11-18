@@ -335,7 +335,7 @@ export default function Editor({ slug }: { slug: string }) {
                 <small>Choose a fixed character, or enable all four on your live website. Publish to apply changes.</small>
               </label>
             )}
-            {content.template_id === "trainer-journal" && (
+            {["trainer-journal", "astral-nexus"].includes(content.template_id) && (
               <label>Public contact email (optional)
                 <input type="email" maxLength={254} disabled={busy !== ""} value={content.trainer_contact_email ?? ""}
                   onChange={(event) => update({ trainer_contact_email: event.target.value.trim() || null })} />

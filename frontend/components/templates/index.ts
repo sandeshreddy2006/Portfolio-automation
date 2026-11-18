@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { PortfolioContent } from "@/lib/portfolio";
 import { Aurora } from "./aurora";
+import { AstralNexus } from "./astral-nexus";
 import { Bento } from "./bento";
 import { Blocky } from "./blocky";
 import { Cinema } from "./cinema";
@@ -23,6 +24,7 @@ const components: Record<string, TemplateMeta["Component"]> = {
   brutalist: Brutalist,
   blocky: Blocky,
   aurora: Aurora,
+  "astral-nexus": AstralNexus,
   storefront: Storefront,
   cinema: Cinema,
   desktop: Desktop,

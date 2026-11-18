@@ -35,7 +35,7 @@ Database = Annotated[Session, Depends(get_db)]
 MAX_PORTFOLIOS = 5
 MIN_SLUG_LENGTH = 3
 # Keep in sync with frontend/components/templates/index.ts.
-TEMPLATE_IDS = {"editorial", "terminal", "bento", "brutalist", "blocky", "aurora", "storefront", "cinema", "desktop", "trainer-journal"}
+TEMPLATE_IDS = {"editorial", "terminal", "bento", "brutalist", "blocky", "aurora", "storefront", "cinema", "desktop", "trainer-journal", "astral-nexus"}
 # Names that would collide with site routes or look official.
 RESERVED_SLUGS = {
     "admin", "api", "app", "auth", "login", "logout", "signin", "signup", "register",

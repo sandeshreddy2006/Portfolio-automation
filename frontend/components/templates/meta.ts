@@ -10,6 +10,13 @@ export type TemplateInfo = {
 
 export const templateInfo: TemplateInfo[] = [
   {
+    id: "astral-nexus",
+    name: "Astral Nexus",
+    tagline: "A cosmic observatory with a holographic dragon and orbiting project worlds.",
+    bestFor: "Developers, artists and creators who want an immersive celestial portfolio.",
+    swatches: ["#060812", "#91d8ff", "#8465e9"],
+  },
+  {
     id: "editorial",
     name: "Editorial",
     tagline: "Magazine-style layout with big serif type.",
