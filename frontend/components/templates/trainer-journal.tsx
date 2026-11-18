@@ -143,6 +143,24 @@ export function TrainerJournal({ content, resumeHref, portfolioKey }: {
           </div>
           <UserImage src={content.avatar} framing={content.avatar_framing} className={styles.avatar} />
         </section>
+        <nav className={styles.recruiterPath} aria-label="Recruiter quick links">
+          {resumeHref && (
+            <a href={resumeHref} download="resume.pdf">
+              <span aria-hidden="true">↓</span>
+              <span><strong>Download Résumé</strong><small>Your take-home trainer card · PDF</small></span>
+            </a>
+          )}
+          {content.trainer_contact_email && (
+            <a href={`mailto:${encodeURIComponent(content.trainer_contact_email).replace("%40", "@")}`}>
+              <span aria-hidden="true">✉</span>
+              <span><strong>Email Me</strong><small>Start a conversation</small></span>
+            </a>
+          )}
+          <a href="#trainer-projects">
+            <span aria-hidden="true">▤</span>
+            <span><strong>View Projects</strong><small>Jump straight to the journal</small></span>
+          </a>
+        </nav>
 
         {enhanced && (
           <section className={styles.console} aria-labelledby="trainer-map-title">

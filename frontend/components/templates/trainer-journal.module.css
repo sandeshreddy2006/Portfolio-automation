@@ -415,6 +415,28 @@
   .entries { grid-template-columns: minmax(0, 1fr); }
 }
 
+.recruiterPath {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px; margin: 0 0 28px;
+}
+.recruiterPath a {
+  display: flex; align-items: center; gap: 13px; min-height: 82px;
+  padding: 15px 18px; border: 2px solid var(--line); border-radius: 6px;
+  background: var(--paper); color: var(--ink); box-shadow: 0 4px var(--shade);
+  text-decoration: none;
+}
+.recruiterPath a > span:first-child {
+  display: grid; place-items: center; flex: none; width: 36px; height: 36px;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--guide);
+  color: var(--accent); font-size: 26px;
+}
+.recruiterPath strong { display: block; font: 400 25px/1 var(--pixel-text); }
+.recruiterPath small { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
+.recruiterPath a:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
+@media (prefers-reduced-motion: no-preference) {
+  .recruiterPath a { transition: transform 160ms steps(3), box-shadow 160ms ease; }
+  .recruiterPath a:is(:hover, :focus-visible) { transform: translateY(-3px); box-shadow: 0 7px var(--shade); }
+}
 .homestead { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .homePath {
   position: absolute; left: 57%; top: 68%; width: 15.8333%; height: 4%;
